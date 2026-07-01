@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Selección Argentina — Centro de Observación</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<style>
+.inp{width:100%;background:#D9ECF6;border:1px solid #C3E0EE;border-radius:8px;padding:9px 12px;font-size:13.5px;color:#0B2B45;outline:none;transition:border-color .15s}
+.inp:focus{border-color:#1A8FC1;background:#fff}
+.inp option{background:#fff;color:#0B2B45}
+.bp{display:inline-flex;align-items:center;gap:6px;background:#0B3D62;color:#fff;font-weight:700;font-size:13px;padding:9px 16px;border-radius:9px;cursor:pointer;border:none;transition:opacity .15s}
+.bp:hover{opacity:.88}.bp:disabled{opacity:.4;cursor:not-allowed}
+.bs{display:inline-flex;align-items:center;gap:6px;background:#fff;color:#0B2B45;font-weight:600;font-size:13px;padding:9px 16px;border-radius:9px;border:1px solid #C3E0EE;cursor:pointer;transition:background .15s}
+.bs:hover{background:#EAF5FA}
+.rs{-webkit-appearance:none;appearance:none;height:10px;border-radius:6px;outline:none;cursor:pointer;width:100%}
+.rs::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--tc);border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);cursor:grab}
+.rs::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:var(--tc);border:3px solid #fff;cursor:grab}
+.spin{animation:sp 1s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:#EAF6FB}::-webkit-scrollbar-thumb{background:#C3E0EE;border-radius:3px}
+</style>
+</head>
+<body class="bg-[#EAF6FB]">
+<div id="root"></div>
+<script type="text/babel">
+
+/* ═══ CONFIG — REEMPLAZÁ LA KEY CON LA TUYA ═══ */
+const SUPABASE_URL="https://pxdetecbeoqowqkljwyb.supabase.co";
+const SUPABASE_KEY="sb_publishable_arKD4bdFbkk8yqrqP0GjSw_-2FxeJOj";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const {useState,useEffect,useMemo,useRef}=React;
+
+/* ═══ CONSTANTES ═══ */
+const CATS=["Mayores","U23","U21","U19","U17","U15"];
+const POSS=["Armador/a","Punta receptor/a","Central","Opuesto/a","Líbero"];
+const MANOS=["Derecha","Izquierda","Ambidiestro"];
+const ROLES={admin:{label:"Administrador/a",nivel:4,color:"#0B3D62"},head_coach:{label:"Entrenador/a Principal",nivel:3,color:"#1A8FC1"},coach:{label:"Entrenador/a de Categoría",nivel:2,color:"#159C6B"},scout:{label:"Veedor/a - Evaluador/a",nivel:1,color:"#E08E1D"}};
+const AREAS={tecnico:{label:"Técnico",color:"#1A8FC1",vars:[{k:"saque",l:"Saque"},{k:"recepcion",l:"Recepción"},{k:"armado",l:"Armado/Colocación"},{k:"ataque",l:"Ataque/Remate"},{k:"defensa_bloqueo",l:"Defensa/Bloqueo"}]},fisico:{label:"Físico",color:"#159C6B",vars:[{k:"salto",l:"Salto/Alcance"},{k:"velocidad",l:"Velocidad/Agilidad"},{k:"fuerza",l:"Fuerza"},{k:"resistencia",l:"Resistencia"},{k:"coordinacion",l:"Coordinación"}]},mental:{label:"Mental/Actit",color:"#E08E1D",vars:[{k:"concentracion",l:"Concentración"},{k:"liderazgo",l:"Liderazgo"},{k:"presion",l:"Manejo presión"},{k:"equipo",l:"Trabajo equipo"},{k:"actitud",l:"Actitud/Compromiso"}]}};
+const ESC=[{v:1,l:"Insuficiente"},{v:2,l:"Regular"},{v:3,l:"Por encima norma"},{v:4,l:"Muy bueno"},{v:5,l:"Excepcional"}];
+const SC={0:"#C3D6E0",1:"#D9534F",2:"#E08E1D",3:"#D9A800",4:"#5C9C3A",5:"#1A8FC1"};
+const EST={watching:{l:"Observando",e:"👁",c:"#6E8DA3"},priority:{l:"Prioridad",e:"⭐",c:"#E08E1D"},signed:{l:"Confirmado",e:"✓",c:"#159C6B"},discarded:{l:"Descartado",e:"✗",c:"#D9534F"}};
+const AC=[{id:"seleccion",label:"Staff Selección Nacional",desc:"Cuerpo técnico y administración",roles:["admin","head_coach"],accent:"#1B5FA8"},{id:"veedor",label:"Veedor/a",desc:"Observación y carga en cancha",roles:["scout"],accent:"#E08E1D"},{id:"club",label:"Staff de Club",desc:"Entrenadores de categoría",roles:["coach"],accent:"#159C6B"},{id:"jugador",label:"Jugador/a",desc:"Próximamente disponible",roles:[],accent:"#8FA9BC",soon:true}];
+
+/* ═══ HELPERS ═══ */
+const fd=d=>d?new Date(d).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric"}):"—";
+const fdt=d=>d?new Date(d).toLocaleString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}):"—";
+
+/* ═══ SUPABASE DATA LAYER ═══ */
+const pFD=r=>({id:r.id,nombre:r.nombre,apellido:r.apellido,dni:r.dni,fechaNacimiento:r.fecha_nacimiento,lugarNacimiento:r.lugar_nacimiento,nacionalidad:r.nacionalidad,categoria:r.categoria,posicion:r.posicion,altura:r.altura,peso:r.peso,envergadura:r.envergadura,alcanceAtaque:r.alcance_ataque,alcanceBloqueo:r.alcance_bloqueo,manoDominante:r.mano_dominante,club:r.club,entrenadorClub:r.entrenador_club,telefono:r.telefono,email:r.email,localidad:r.localidad,provincia:r.provincia,observacionesGenerales:r.observaciones_generales,estado:r.estado||"watching",fotoUrl:r.foto_url,ingresadoPor:r.ingresado_por,activo:r.activo,fechaIngreso:r.fecha_ingreso});
+const pTD=p=>({nombre:p.nombre,apellido:p.apellido,dni:p.dni,fecha_nacimiento:p.fechaNacimiento||null,lugar_nacimiento:p.lugarNacimiento,nacionalidad:p.nacionalidad||"Argentina",categoria:p.categoria,posicion:p.posicion,altura:p.altura?Number(p.altura):null,peso:p.peso?Number(p.peso):null,envergadura:p.envergadura?Number(p.envergadura):null,alcance_ataque:p.alcanceAtaque?Number(p.alcanceAtaque):null,alcance_bloqueo:p.alcanceBloqueo?Number(p.alcanceBloqueo):null,mano_dominante:p.manoDominante,club:p.club,entrenador_club:p.entrenadorClub,telefono:p.telefono,email:p.email,localidad:p.localidad,provincia:p.provincia,observaciones_generales:p.observacionesGenerales,estado:p.estado||"watching",foto_url:p.fotoUrl||null});
+const eFD=r=>({id:r.id,playerId:r.player_id,area:r.area,valores:r.valores||{},evaluadorId:r.evaluador_id,evaluadorRol:r.evaluador_rol,nota:r.nota,notaGeneral:r.nota_general,adjuntos:r.adjuntos||[],fecha:r.fecha});
+const nFD=r=>({id:r.id,playerId:r.player_id,texto:r.texto,tipo:r.tipo,autorId:r.autor_id,autorRol:r.autor_rol,fecha:r.fecha});
+const ntFD=r=>({id:r.id,playerId:r.player_id,playerName:r.player_name,categoria:r.categoria,area:r.area,evaluadorId:r.evaluador_id,evaluadorNombre:r.evaluador_nombre,fecha:r.fecha});
+async function upPhoto(file,pid){const ext=file.name.split(".").pop(),path=`${pid}_${Date.now()}.${ext}`;const{error}=await sb.storage.from("player-photos").upload(path,file,{upsert:true});if(error){console.error(error);return null;}return sb.storage.from("player-photos").getPublicUrl(path).data.publicUrl;}
+async function upAttach(file){const ext=file.name.split(".").pop(),path=`${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;const{error}=await sb.storage.from("evaluation-attachments").upload(path,file);if(error){console.error(error);return null;}return sb.storage.from("evaluation-attachments").getPublicUrl(path).data.publicUrl;}
+
+/* ═══ ICONOS SVG ═══ */
+const sp=({size=16,color="currentColor",className=""})=>({width:size,height:size,fill:"none",stroke:color,strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round",className,viewBox:"0 0 24 24"});
+const I={
+Search:p=><svg {...sp(p)}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
+Users:p=><svg {...sp(p)}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+User:p=><svg {...sp(p)}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+Plus:p=><svg {...sp(p)}><path d="M12 5v14M5 12h14"/></svg>,
+X:p=><svg {...sp(p)}><path d="M18 6 6 18M6 6l12 12"/></svg>,
+ChevR:p=><svg {...sp(p)}><path d="m9 18 6-6-6-6"/></svg>,
+ChevL:p=><svg {...sp(p)}><path d="m15 18-6-6 6-6"/></svg>,
+Shield:p=><svg {...sp(p)}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+Board:p=><svg {...sp(p)}><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>,
+List:p=><svg {...sp(p)}><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect width="6" height="4" x="9" y="3" rx="1"/><path d="M9 12h6M9 16h6"/></svg>,
+Note:p=><svg {...sp(p)}><path d="M15.5 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3z"/><path d="M15 3v6h6M10 16s.8 1 2 1 2-1 2-1M8 13h.01M16 13h.01"/></svg>,
+LogOut:p=><svg {...sp(p)}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>,
+Trash:p=><svg {...sp(p)}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+Edit:p=><svg {...sp(p)}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+Eye:p=><svg {...sp(p)}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+Lock:p=><svg {...sp(p)}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+Star:p=><svg {...{...sp(p),fill:p.filled?"currentColor":"none"}}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+Calendar:p=><svg {...sp(p)}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>,
+Camera:p=><svg {...sp(p)}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>,
+Grid:p=><svg {...sp(p)}><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>,
+BarC:p=><svg {...sp(p)}><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>,
+Scale:p=><svg {...sp(p)}><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="M7 21h10M12 3v18M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>,
+CkSq:p=><svg {...sp(p)}><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>,
+Sq:p=><svg {...sp(p)}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/></svg>,
+Activity:p=><svg {...sp(p)}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+Clip:p=><svg {...sp(p)}><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>,
+Bell:p=><svg {...sp(p)}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>,
+DL:p=><svg {...sp(p)}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>,
+File:p=><svg {...sp(p)}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
+Save:p=><svg {...sp(p)}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+Alert:p=><svg {...sp(p)}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>,
+Ck2:p=><svg {...sp(p)}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>,
+Loader:p=><svg {...{...sp(p),className:(p.className||"")+" spin"}}><line x1="12" x2="12" y1="2" y2="6"/><line x1="12" x2="12" y1="18" y2="22"/><line x1="4.93" x2="7.76" y1="4.93" y2="7.76"/><line x1="16.24" x2="19.07" y1="16.24" y2="19.07"/><line x1="2" x2="6" y1="12" y2="12"/><line x1="18" x2="22" y1="12" y2="12"/><line x1="4.93" x2="7.76" y1="19.07" y2="16.24"/><line x1="16.24" x2="19.07" y1="7.76" y2="4.93"/></svg>,
+Ball:p=><svg {...sp(p)}><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>,
+};
+/* ═══ COMPONENTES PEQUEÑOS ═══ */
+function RolBadge({rol}){const r=ROLES[rol];if(!r)return null;return<span className="px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap"style={{background:`${r.color}1A`,color:r.color,border:`1px solid ${r.color}40`}}>{r.label}</span>;}
+function ScoreDot({value}){const c={1:"#D9534F",2:"#E08E1D",3:"#D9A800",4:"#5C9C3A",5:"#1A8FC1"}[value]||"#999";return<span className="inline-flex items-center justify-center rounded-full text-white text-xs font-bold"style={{background:c,width:22,height:22}}>{value}</span>;}
+function Empty({icon:Icon,title,desc}){return<div className="flex flex-col items-center justify-center py-16 text-center px-6"><div className="w-14 h-14 rounded-full bg-[#D9ECF6] flex items-center justify-center mb-4"><Icon size={24}color="#6E8DA3"/></div><p className="font-semibold text-[#0B2B45] mb-1">{title}</p><p className="text-sm text-[#6E8DA3] max-w-sm">{desc}</p></div>;}
+function Field({label,children,className=""}){return<label className={`block ${className}`}><span className="block text-xs font-semibold text-[#4F708A] mb-1.5">{label}</span>{children}</label>;}
+function Avatar({player,size="md",showCamera=false,onPhotoChange,uploading=false}){
+  const dims={sm:"w-11 h-11 text-sm",md:"w-16 h-16 text-xl",lg:"w-24 h-24 text-2xl"}[size];
+  const ini=`${player.nombre?.[0]||""}${player.apellido?.[0]||""}`,id=`foto-${player.id||"new"}`;
+  const hf=async e=>{const f=e.target.files?.[0];if(!f||!onPhotoChange)return;if(!f.type.startsWith("image/")){alert("Elegí imagen JPG o PNG");return;}onPhotoChange(f);};
+  return<div className={`relative ${dims} shrink-0`}><div className="w-full h-full rounded-2xl flex items-center justify-center font-bold text-white overflow-hidden border-2 border-white shadow-md"style={{background:player.fotoUrl?"none":"linear-gradient(160deg,#1A8FC1 0%,#0B3D62 100%)"}}>{uploading?<I.Loader size={18}color="#fff"/>:player.fotoUrl?<img src={player.fotoUrl}alt="foto"className="w-full h-full object-cover"/>:ini}</div>{showCamera&&<><input id={id}type="file"accept="image/*"className="hidden"onChange={hf}disabled={uploading}/><label htmlFor={id}title="Cambiar foto"className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-[#E08E1D] flex items-center justify-center shadow-md border-2 border-white cursor-pointer hover:opacity-90"><I.Camera size={11}color="#fff"/></label></>}</div>;
+}
+function Slider({value,onChange}){
+  const v=value??0,pct=(v/5)*100,c=SC[v]||"#C3D6E0";
+  return<div><input type="range"min={0}max={5}step={1}value={v}className="rs w-full"style={{background:`linear-gradient(to right,${c} 0%,${c} ${pct}%,#E4F1F8 ${pct}%,#E4F1F8 100%)`,["--tc"]:c}}onChange={e=>{const n=Number(e.target.value);onChange(n===0?undefined:n);}}/><div className="flex justify-between px-0.5 mt-1">{[0,1,2,3,4,5].map(n=><span key={n}className="text-[10px] font-semibold"style={{color:n===v?SC[n]:"#AFD3E6"}}>{n===0?"—":n}</span>)}</div><p className="text-xs font-semibold mt-0.5"style={{color:v===0?"#8FA9BC":c}}>{v===0?"Sin calificar — deslizá para puntuar":`${v} · ${ESC[v-1]?.l}`}</p></div>;
+}
+
+/* ═══ CHARTS ═══ */
+function useChart(ref,cfg){
+  const inst=useRef(null);
+  useEffect(()=>{if(!ref.current)return;if(inst.current){inst.current.destroy();inst.current=null;}try{inst.current=new Chart(ref.current,cfg);}catch(e){console.error(e);}return()=>{if(inst.current){inst.current.destroy();inst.current=null;}};},[JSON.stringify(cfg)]);
+}
+function RadarC({datasets,labels}){const r=useRef();useChart(r,{type:"radar",data:{labels,datasets},options:{scales:{r:{min:0,max:5,ticks:{stepSize:1,font:{size:10}},pointLabels:{font:{size:9}}}},plugins:{legend:{labels:{font:{size:10}}}}}});return<canvas ref={r}/>;}
+function LineC({datasets,labels}){const r=useRef();useChart(r,{type:"line",data:{labels,datasets},options:{responsive:true,scales:{y:{min:0,max:5,ticks:{stepSize:1,font:{size:10}}},x:{ticks:{font:{size:10}}}},plugins:{legend:{labels:{font:{size:10}}}}}});return<canvas ref={r}/>;}
+function BarC({data,labels,color}){const r=useRef();useChart(r,{type:"bar",data:{labels,datasets:[{data,backgroundColor:color+"99",borderColor:color,borderWidth:1.5,borderRadius:4}]},options:{indexAxis:"y",responsive:true,scales:{x:{min:0,max:5,ticks:{stepSize:1,font:{size:10}}},y:{ticks:{font:{size:10}}}},plugins:{legend:{display:false}}}});return<canvas ref={r}/>;}
+function ScatC({datasets}){
+  var r=useRef();
+  var cfg={
+    type:"scatter",
+    data:{datasets:datasets},
+    options:{
+      responsive:true,
+      scales:{
+        x:{type:"linear",ticks:{font:{size:9},callback:function(v){return fd(v);}}},
+        y:{min:0,max:5,ticks:{stepSize:1,font:{size:10}}}
+      },
+      plugins:{
+        legend:{labels:{font:{size:10}}},
+        tooltip:{callbacks:{
+          title:function(items){var d=items[0]&&items[0].raw;return d?fdt(d.x):"";},
+          label:function(item){var d=item.raw;return d.y+"/5"+(d.nota?" - "+d.nota:"");}
+        }}
+      }
+    }
+  };
+  useChart(r,cfg);
+  return <canvas ref={r}/>;
+}
+/* ═══ ISOTIPO ═══ */
+function FevaMark({size=40}){return<svg width={size}height={size}viewBox="0 0 80 80"fill="none"><rect x="6"y="6"width="68"height="68"rx="14"fill="#fff"stroke="#0B3D62"strokeWidth="3"/><path d="M22 40 L34 52"stroke="#1A8FC1"strokeWidth="9"strokeLinecap="round"/><path d="M34 52 L60 24"stroke="#0B3D62"strokeWidth="9"strokeLinecap="round"/></svg>;}
+function ArgFlag({size=28}){
+  const rays=Array.from({length:16},(_,i)=>{const a=(i*Math.PI*2)/16,x1=30+Math.cos(a)*7,y1=20+Math.sin(a)*7,x2=30+Math.cos(a)*9.5,y2=20+Math.sin(a)*9.5;return<line key={i}x1={x1}y1={y1}x2={x2}y2={y2}stroke="#F6B40E"strokeWidth="1.4"strokeLinecap="round"/>;});
+  return<svg width={size}height={size*0.66}viewBox="0 0 60 40"><rect width="60"height="40"rx="4"fill="#fff"/><rect width="60"height="13.3"rx="4"fill="#75AADB"/><rect y="26.7"width="60"height="13.3"fill="#75AADB"/><circle cx="30"cy="20"r="6"fill="#F6B40E"stroke="#85340A"strokeWidth="0.6"/>{rays}</svg>;
+}
+/* ═══ LOGIN ═══ */
+function Login(){
+  const[mode,setMode]=useState("login");
+  const[email,setEmail]=useState("");
+  const[pass,setPass]=useState("");
+  const[pass2,setPass2]=useState("");
+  const[nombre,setNombre]=useState("");
+  const[rolSol,setRolSol]=useState("scout");
+  const[catSol,setCatSol]=useState("U19");
+  const[err,setErr]=useState("");
+  const[ok,setOk]=useState("");
+  const[loading,setL]=useState(false);
+  const[cat,setCat]=useState(null);
+
+  const reset=()=>{setEmail("");setPass("");setPass2("");setNombre("");setErr("");setOk("");};
+
+  const handleLogin=async e=>{
+    e.preventDefault();setErr("");setL(true);
+    const{error}=await sb.auth.signInWithPassword({email,password:pass});
+    setL(false);
+    if(error)setErr(error.message.includes("Invalid")?"Email o contraseña incorrectos.":"No se pudo iniciar sesión.");
+  };
+
+  const handleSignup=async e=>{
+    e.preventDefault();setErr("");
+    if(!nombre.trim()){setErr("Ingresá tu nombre completo.");return;}
+    if(pass.length<6){setErr("La contraseña debe tener al menos 6 caracteres.");return;}
+    if(pass!==pass2){setErr("Las contraseñas no coinciden.");return;}
+    setL(true);
+    const{data,error}=await sb.auth.signUp({email,password:pass});
+    if(error){setL(false);setErr(error.message.includes("already")?"Ese email ya tiene una cuenta.":"No se pudo crear la cuenta.");return;}
+    if(data?.user){await sb.from("profiles").insert({id:data.user.id,nombre:nombre.trim(),rol:rolSol,categoria:catSol});}
+    setL(false);
+    setOk("Cuenta creada. Ya podés ingresar.");
+    setMode("login");reset();
+  };
+
+  const AC2=[
+    {id:"seleccion",label:"Staff Nacional",roles:["admin","head_coach"],accent:"#3FD0E0"},
+    {id:"veedor",label:"Veedor/a",roles:["scout"],accent:"#FFB23D"},
+    {id:"club",label:"Staff Club",roles:["coach"],accent:"#34D399"},
+    {id:"jugador",label:"Jugador/a",roles:[],accent:"rgba(255,255,255,0.3)",soon:true},
+  ];
+
+  return<div className="min-h-screen flex items-center justify-center p-4"
+    style={{background:"linear-gradient(150deg,#EAF7F5 0%,#D6ECF7 60%,#E2EEF8 100%)"}}>
+    <div style={{width:"100%",maxWidth:340}}>
+      <div style={{background:"#0B2235",borderRadius:20,border:"1px solid rgba(255,255,255,0.08)",padding:"2.25rem 2rem"}}>
+
+        <div style={{textAlign:"center",marginBottom:"1.75rem"}}>
+          <FevaMark size={52}/>
+          <p style={{fontSize:20,fontWeight:500,color:"#EAF4FA",margin:"10px 0 2px"}}>FeVA · Observa</p>
+          <p style={{fontSize:10,color:"rgba(255,255,255,0.4)",letterSpacing:".12em",textTransform:"uppercase",margin:0}}>Selección Argentina de Vóleibol</p>
+        </div>
+
+        <div style={{display:"flex",gap:4,marginBottom:"1.25rem",background:"rgba(255,255,255,0.06)",borderRadius:8,padding:3}}>
+          {[{id:"login",l:"Ingresar"},{id:"signup",l:"Crear cuenta"}].map(m=>
+            <button key={m.id} onClick={()=>{setMode(m.id);reset();setCat(null);}}
+              style={{flex:1,background:mode===m.id?"#1A3A56":"transparent",border:mode===m.id?"0.5px solid rgba(63,208,224,0.3)":"none",borderRadius:6,padding:"6px 10px",textAlign:"center",fontSize:12,fontWeight:mode===m.id?500:400,color:mode===m.id?"#EAF4FA":"rgba(255,255,255,0.4)",cursor:"pointer"}}>
+              {m.l}
+            </button>
+          )}
+        </div>
+
+        {ok&&<div style={{background:"rgba(52,211,153,0.15)",border:"0.5px solid rgba(52,211,153,0.3)",borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:12,color:"#34D399"}}>{ok}</div>}
+
+        {mode==="login"&&<div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5,marginBottom:"1.25rem"}}>
+            {AC2.map(c=><button key={c.id} disabled={c.soon}
+              onClick={()=>setCat(p=>p?.id===c.id?null:c)}
+              style={{background:cat?.id===c.id?`${c.accent}20`:"rgba(255,255,255,0.04)",border:cat?.id===c.id?`1px solid ${c.accent}`:"0.5px solid rgba(255,255,255,0.08)",borderRadius:8,padding:"8px 6px",textAlign:"center",fontSize:11,color:c.soon?"rgba(255,255,255,0.2)":cat?.id===c.id?"#EAF4FA":"rgba(255,255,255,0.5)",cursor:c.soon?"not-allowed":"pointer"}}>
+              {c.id==="seleccion"&&<span style={{display:"block",marginBottom:2}}><ArgFlag size={20}/></span>}
+              {c.id==="veedor"&&<I.Search size={18} color={cat?.id===c.id?c.accent:"rgba(255,255,255,0.4)"}/>}
+              {c.id==="club"&&<I.Shield size={18} color={cat?.id===c.id?c.accent:"rgba(255,255,255,0.4)"}/>}
+              {c.id==="jugador"&&<I.Ball size={18} color="rgba(255,255,255,0.2)"/>}
+              <span style={{display:"block",marginTop:4}}>{c.label}</span>
+              {c.soon&&<span style={{fontSize:9,color:"rgba(255,255,255,0.2)"}}>Próximamente</span>}
+            </button>)}
+          </div>
+          {cat&&!cat.soon&&<form onSubmit={handleLogin} style={{marginTop:4}}>
+            <div style={{marginBottom:8}}>
+              <div style={{fontSize:11,color:"rgba(255,255,255,0.45)",marginBottom:3,fontWeight:500}}>Email</div>
+              <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="tu@email.com"
+                style={{width:"100%",boxSizing:"border-box",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#EAF4FA",outline:"none"}}/>
+            </div>
+            <div style={{marginBottom:"1.25rem"}}>
+              <div style={{fontSize:11,color:"rgba(255,255,255,0.45)",marginBottom:3,fontWeight:500}}>Contraseña</div>
+              <input type="password" required value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••"
+                style={{width:"100%",boxSizing:"border-box",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#EAF4FA",outline:"none"}}/>
+            </div>
+            {err&&<div style={{background:"rgba(217,83,79,0.15)",border:"0.5px solid rgba(217,83,79,0.3)",borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:12,color:"#E07070"}}>{err}</div>}
+            <button type="submit" disabled={loading}
+              style={{width:"100%",background:"linear-gradient(135deg,#3FD0E0,#1B5FA8)",border:"none",borderRadius:8,padding:10,textAlign:"center",color:"white",fontWeight:500,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+              {loading&&<I.Loader size={15} color="#fff"/>}{loading?"Ingresando...":"Ingresar"}
+            </button>
+          </form>}
+        </div>}
+
+        {mode==="signup"&&<form onSubmit={handleSignup}>
+          <div style={{marginBottom:8}}>
+            <div style={{fontSize:11,color:"rgba(255,255,255,0.45)",marginBottom:3,fontWeight:500}}>Nombre completo *</div>
+            <input type="text" required value={nombre} onChange={e=>setNombre(e.target.value)} placeholder="Nombre y apellido"
+              style={{width:"100%",boxSizing:"border-box",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#EAF4FA",outline:"none"}}/>
+          </div>
+          <div style={{marginBottom:8}}>
+            <div style={{fontSize:11,color:"rgba(255,255,255,0.45)",marginBottom:3,fontWeight:500}}>Email *</div>
+            <input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="tu@email.com"
+              style={{width:"100%",boxSizing:"border-box",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#EAF4FA",outline:"none"}}/>
+          </div>
+          <div style={{marginBottom:8}}>
+            <div style={{fontSize:11,color:"rgba(255,255,255,0.45)",marginBottom:3,fontWeight:500}}>Contraseña *</div>
+            <input type="password" required value={pass} onChange={e=>setPass(e.target.value)} placeholder="Mínimo 6 caracteres"
+              style={{width:"100%",boxSizing:"border-box",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#EAF4FA",outline:"none"}}/>
+          </div>
+          <div style={{marginBottom:8}}>
+            <div style={{fontSize:11,color:"rgba(255,255,255,0.45)",marginBottom:3,fontWeight:500}}>Repetir contraseña *</div>
+            <input type="password" required value={pass2} onChange={e=>setPass2(e.target.value)} placeholder="••••••••"
+              style={{width:"100%",boxSizing:"border-box",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#EAF4FA",outline:"none"}}/>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:"1.25rem"}}>
+            <div>
+              <div style={{fontSize:11,color:"rgba(255,255,255,0.45)",marginBottom:3,fontWeight:500}}>Rol</div>
+              <select value={rolSol} onChange={e=>setRolSol(e.target.value)}
+                style={{width:"100%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"9px 8px",fontSize:12,color:"#EAF4FA",outline:"none"}}>
+                <option value="scout">Veedor/a</option>
+                <option value="coach">Entrenador Club</option>
+                <option value="head_coach">Entrenador Principal</option>
+              </select>
+            </div>
+            <div>
+              <div style={{fontSize:11,color:"rgba(255,255,255,0.45)",marginBottom:3,fontWeight:500}}>Categoría</div>
+              <select value={catSol} onChange={e=>setCatSol(e.target.value)}
+                style={{width:"100%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"9px 8px",fontSize:12,color:"#EAF4FA",outline:"none"}}>
+                <option value="Todas">Todas</option>
+                {CATS.map(c=><option key={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+          {err&&<div style={{background:"rgba(217,83,79,0.15)",border:"0.5px solid rgba(217,83,79,0.3)",borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:12,color:"#E07070"}}>{err}</div>}
+          <button type="submit" disabled={loading}
+            style={{width:"100%",background:"linear-gradient(135deg,#3FD0E0,#1B5FA8)",border:"none",borderRadius:8,padding:10,textAlign:"center",color:"white",fontWeight:500,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+            {loading&&<I.Loader size={15} color="#fff"/>}{loading?"Creando cuenta...":"Crear cuenta"}
+          </button>
+        </form>}
+
+        <div style={{textAlign:"center",marginTop:"1rem"}}>
+          <p style={{fontSize:10,color:"rgba(255,255,255,0.2)",margin:0}}>Acceso exclusivo para personal autorizado por FeVA</p>
+        </div>
+      </div>
+    </div>
+  </div>;
+}
+
+
+
+/* ═══ BÚSQUEDA GLOBAL ═══ */
+function GSearch({players,onJump}){
+  const[q,setQ]=useState(""),[ open,setOpen]=useState(false);
+  const res=q.trim()?players.filter(p=>`${p.nombre} ${p.apellido} ${p.club||""} ${p.categoria}`.toLowerCase().includes(q.toLowerCase())).slice(0,6):[];
+  return<div className="relative w-full max-w-md"><div className="absolute left-3 top-1/2 -translate-y-1/2"><I.Search size={15}color="#6E8DA3"/></div><input value={q}onChange={e=>{setQ(e.target.value);setOpen(true);}}onFocus={()=>setOpen(true)}onBlur={()=>setTimeout(()=>setOpen(false),150)}placeholder="Buscar jugador/a..."className="inp pl-9"/>{open&&q.trim()&&<div className="absolute top-full left-0 mt-2 w-full bg-white rounded-2xl border border-[#DCEEF7] shadow-2xl overflow-hidden z-50">{!res.length?<p className="text-sm text-[#6E8DA3] px-4 py-3">Sin resultados</p>:res.map(p=><button key={p.id}onMouseDown={()=>{onJump(p);setQ("");setOpen(false);}}className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-[#EAF5FA] text-left border-b border-[#EAF5FA] last:border-0 cursor-pointer"><Avatar player={p}size="sm"/><div className="min-w-0"><p className="text-sm font-semibold text-[#0B2B45] truncate">{p.nombre} {p.apellido}</p><p className="text-xs text-[#6E8DA3] truncate">{p.posicion} · {p.categoria}</p></div></button>)}</div>}</div>;
+}
+
+/* ═══ NOTIFICACIONES ═══ */
+function Notifs({notifications,user,lastSeen,onMark,onJump,players}){
+  const[open,setOpen]=useState(false);
+  const rel=notifications.filter(n=>n.evaluadorId!==user.id).filter(n=>["admin","head_coach"].includes(user.rol)||n.categoria===user.categoria).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).slice(0,15);
+  const unread=rel.filter(n=>new Date(n.fecha)>new Date(lastSeen||0)).length;
+  const tog=()=>{const x=!open;setOpen(x);if(x)onMark(new Date().toISOString());};
+  return<div className="relative"><button onClick={tog}onBlur={()=>setTimeout(()=>setOpen(false),150)}className="relative w-9 h-9 rounded-full bg-[#E4F1F8] hover:bg-[#D9ECF6] flex items-center justify-center transition-colors cursor-pointer"><I.Bell size={16}color="#0B3D62"/>{unread>0&&<span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-[#B8202E] text-white text-[10px] font-bold flex items-center justify-center">{unread>9?"9+":unread}</span>}</button>{open&&<div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-2xl border border-[#DCEEF7] shadow-2xl overflow-hidden z-50"><div className="px-4 py-3 border-b border-[#E4F1F8]"><p className="text-sm font-bold text-[#0B2B45]">Notificaciones</p><p className="text-xs text-[#6E8DA3]">Nuevas evaluaciones del staff</p></div><div className="max-h-72 overflow-auto">{!rel.length?<p className="text-sm text-[#6E8DA3] px-4 py-6 text-center">No hay novedades</p>:rel.map(n=>{const A=AREAS[n.area],p=players.find(pl=>pl.id===n.playerId);return<button key={n.id}onMouseDown={()=>{if(p)onJump(p);setOpen(false);}}className="w-full flex items-start gap-3 px-4 py-3 hover:bg-[#EAF5FA] text-left border-b border-[#EAF5FA] last:border-0 cursor-pointer"><span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"style={{background:`${A.color}1A`}}><I.List size={14}color={A.color}/></span><div className="min-w-0"><p className="text-sm text-[#0B2B45]"><b>{n.evaluadorNombre}</b> evaluó a <b>{n.playerName}</b></p><p className="text-xs text-[#6E8DA3]">{A.label} · {fdt(n.fecha)}</p></div></button>;})}</div></div>}</div>;
+}
+
+/* ═══ SIDEBAR / SHELL ═══ */
+function Shell({user,onLogout,view,setView,players,onJump,notifications,lastSeen,onMark,children}){
+  const[col,setCol]=useState(false);
+  const nav=[{id:"dashboard",l:"Panel general",Icon:I.Board,t:"#1A8FC1"},{id:"players",l:"Jugadores",Icon:I.Users,t:"#1A8FC1"},{id:"reports",l:"Informes",Icon:I.File,t:"#159C6B"},...(user.rol==="admin"?[{id:"admin",l:"Administración",Icon:I.Shield,t:"#E08E1D"}]:[])];
+  const w=col?"w-[76px]":"w-64";
+  return<div className="min-h-screen flex">
+    <aside className={`${w} flex flex-col fixed h-screen z-20 transition-all duration-200`}style={{background:"linear-gradient(190deg,#1FC9C2 0%,#1B5FA8 55%,#0B3D62 100%)"}}>
+      <div className="px-4 py-4 border-b border-white/15 flex items-center gap-2.5 relative"><div className="shrink-0"><FevaMark size={36}/></div>{!col&&<div className="min-w-0"><p className="text-white font-bold text-[13px] leading-tight">SELECCIÓN ARGENTINA</p><p className="text-white/70 text-[10px] font-semibold uppercase tracking-wider">Centro de Observación</p></div>}<button onClick={()=>setCol(c=>!c)}className="absolute -right-3 top-7 w-6 h-6 rounded-full bg-[#0B3D62] border border-white/20 flex items-center justify-center text-white/80 hover:text-white cursor-pointer">{col?<I.ChevR size={13}color="white"/>:<I.ChevL size={13}color="white"/>}</button></div>
+      <nav className="flex-1 px-3 py-5 space-y-1.5">{nav.map(n=>{const a=view===n.id;return<button key={n.id}onClick={()=>setView(n.id)}title={n.l}className={`w-full flex items-center gap-3 px-2.5 py-2.5 rounded-xl text-sm font-semibold transition-all hover:bg-white/10 cursor-pointer ${col?"justify-center":""}`}style={{background:a?"rgba(255,255,255,0.20)":"transparent",color:"#fff"}}><span className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"style={{background:a?"#fff":"rgba(255,255,255,0.15)",boxShadow:a?"0 2px 10px rgba(0,0,0,0.18)":"none"}}><n.Icon size={16}color={a?n.t:"#fff"}/></span>{!col&&<span className="truncate">{n.l}</span>}</button>;})}</nav>
+      <div className="px-3 py-4 border-t border-white/15"><div className={`flex items-center gap-2.5 mb-3 ${col?"justify-center":""}`}><div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0 ring-2 ring-white/20"style={{background:ROLES[user.rol].color}}>{user.nombre.split(" ").map(n=>n[0]).slice(0,2).join("")}</div>{!col&&<div className="min-w-0"><p className="text-white text-xs font-semibold truncate">{user.nombre}</p><p className="text-white/70 text-[11px] truncate">{ROLES[user.rol].label}</p></div>}</div><button onClick={onLogout}className="w-full flex items-center justify-center gap-2 text-white/75 hover:text-white text-xs font-medium py-2 rounded-lg hover:bg-white/15 transition-colors cursor-pointer"><I.LogOut size={14}color="white"/>{!col&&"Cerrar sesión"}</button></div>
+    </aside>
+    <main className={`flex-1 min-h-screen transition-all duration-200 ${col?"ml-[76px]":"ml-64"}`}>
+      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-[#D3E6F0] px-8 py-3 flex items-center justify-between gap-4"><GSearch players={players}onJump={onJump}/><div className="flex items-center gap-3"><p className="text-xs text-[#6E8DA3] font-medium hidden lg:block">Búsqueda para todo el staff</p><Notifs notifications={notifications}user={user}lastSeen={lastSeen}onMark={onMark}onJump={onJump}players={players}/></div></div>
+      {children}
+    </main>
+  </div>;
+}
+/* ═══ FORMULARIO JUGADOR ═══ */
+function PForm({initial,onSave,onCancel,canEditCat}){
+  const blank={nombre:"",apellido:"",dni:"",fechaNacimiento:"",lugarNacimiento:"",nacionalidad:"Argentina",categoria:"U19",posicion:"Punta receptor/a",altura:"",peso:"",envergadura:"",alcanceAtaque:"",alcanceBloqueo:"",manoDominante:"Derecha",club:"",entrenadorClub:"",telefono:"",email:"",localidad:"",provincia:"",observacionesGenerales:"",estado:"watching",fotoUrl:""};
+  const[f,setF]=useState(initial||blank),[upF,setUpF]=useState(false);
+  const set=k=>e=>setF(s=>({...s,[k]:e.target.value}));
+  const req=["nombre","apellido","dni","fechaNacimiento","categoria","posicion"],miss=req.filter(k=>!f[k]);
+  const hP=async file=>{setUpF(true);const url=await upPhoto(file,f.id||crypto.randomUUID());setUpF(false);if(url)setF(s=>({...s,fotoUrl:url}));else alert("No se pudo subir la foto");};
+  return<div className="bg-white rounded-2xl border border-[#DCEEF7] shadow-sm p-6">
+    <div className="flex items-center gap-2 mb-5"><I.User size={18}color="#0B3D62"/><h3 className="font-bold text-[#0B2B45]">Datos personales y deportivos</h3></div>
+    <div className="flex items-center gap-4 mb-5"><Avatar player={f}size="lg"showCamera onPhotoChange={hP}uploading={upF}/><div><p className="text-sm font-semibold text-[#0B2B45]">Foto del jugador/a</p><p className="text-xs text-[#6E8DA3]">Clic en la cámara para subir (JPG/PNG, máx 5MB)</p></div></div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <Field label="Nombre *"><input value={f.nombre}onChange={set("nombre")}className="inp"placeholder="Nombre"/></Field>
+      <Field label="Apellido *"><input value={f.apellido}onChange={set("apellido")}className="inp"placeholder="Apellido"/></Field>
+      <Field label="DNI *"><input value={f.dni}onChange={set("dni")}className="inp"placeholder="00000000"/></Field>
+      <Field label="Fecha de nacimiento *"><input type="date"value={f.fechaNacimiento}onChange={set("fechaNacimiento")}className="inp"/></Field>
+      <Field label="Lugar de nacimiento"><input value={f.lugarNacimiento}onChange={set("lugarNacimiento")}className="inp"placeholder="Ciudad, Provincia"/></Field>
+      <Field label="Nacionalidad"><input value={f.nacionalidad}onChange={set("nacionalidad")}className="inp"/></Field>
+      <Field label="Categoría *"><select value={f.categoria}onChange={set("categoria")}className="inp"disabled={!canEditCat}>{CATS.map(c=><option key={c}>{c}</option>)}</select></Field>
+      <Field label="Posición *"><select value={f.posicion}onChange={set("posicion")}className="inp">{POSS.map(p=><option key={p}>{p}</option>)}</select></Field>
+      <Field label="Estado"><select value={f.estado}onChange={set("estado")}className="inp">{Object.entries(EST).map(([k,v])=><option key={k}value={k}>{v.e} {v.l}</option>)}</select></Field>
+    </div>
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-5">
+      <Field label="Altura (cm)"><input type="number"value={f.altura}onChange={set("altura")}className="inp"/></Field>
+      <Field label="Peso (kg)"><input type="number"value={f.peso}onChange={set("peso")}className="inp"/></Field>
+      <Field label="Envergadura (cm)"><input type="number"value={f.envergadura}onChange={set("envergadura")}className="inp"/></Field>
+      <Field label="Alcance ataque (cm)"><input type="number"value={f.alcanceAtaque}onChange={set("alcanceAtaque")}className="inp"/></Field>
+      <Field label="Alcance bloqueo (cm)"><input type="number"value={f.alcanceBloqueo}onChange={set("alcanceBloqueo")}className="inp"/></Field>
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
+      <Field label="Mano dominante"><select value={f.manoDominante}onChange={set("manoDominante")}className="inp">{MANOS.map(m=><option key={m}>{m}</option>)}</select></Field>
+      <Field label="Club actual"><input value={f.club}onChange={set("club")}className="inp"/></Field>
+      <Field label="Entrenador/a de club"><input value={f.entrenadorClub}onChange={set("entrenadorClub")}className="inp"/></Field>
+      <Field label="Teléfono"><input value={f.telefono}onChange={set("telefono")}className="inp"/></Field>
+      <Field label="Email"><input value={f.email}onChange={set("email")}className="inp"/></Field>
+      <Field label="Localidad / Provincia"><div className="flex gap-2"><input value={f.localidad}onChange={set("localidad")}className="inp"placeholder="Localidad"/><input value={f.provincia}onChange={set("provincia")}className="inp"placeholder="Provincia"/></div></Field>
+    </div>
+    <Field label="Observaciones generales"className="mt-5"><textarea value={f.observacionesGenerales}onChange={set("observacionesGenerales")}className="inp min-h-[70px]"placeholder="Contexto general, antecedentes, lesiones..."/></Field>
+    {miss.length>0&&<div className="flex items-center gap-2 text-[#946C1A] text-xs mt-4 bg-[#946C1A]/10 px-3 py-2 rounded-lg"><I.Alert size={14}color="#946C1A"/> Completá los campos obligatorios (*) para guardar.</div>}
+    <div className="flex justify-end gap-2 mt-6"><button onClick={onCancel}className="bs">Cancelar</button><button onClick={()=>onSave(f)}disabled={miss.length>0}className="bp"><I.Save size={15}color="#fff"/> Guardar jugador/a</button></div>
+  </div>;
+}
+
+/* ═══ FORMULARIO EVALUACIÓN ═══ */
+function EForm({player,user,onSave,onCancel}){
+  const[tab,setTab]=useState("tecnico"),[vals,setVals]=useState({tecnico:{},fisico:{},mental:{}}),[notas,setNotas]=useState({tecnico:"",fisico:"",mental:""}),[notaG,setNotaG]=useState(""),[adj,setAdj]=useState([]),[sub,setSub]=useState(false);
+  const tabs=["tecnico","fisico","mental"],done=a=>AREAS[a].vars.every(v=>vals[a][v.k]),any=tabs.some(done),idx=tabs.indexOf(tab);
+  const hF=async list=>{setSub(true);for(const f of Array.from(list)){const isI=f.type.startsWith("image/"),base={id:Date.now()+Math.random(),nombre:f.name,esImagen:isI};if(isI){const url=await upAttach(f);if(url)setAdj(p=>[...p,{...base,url}]);}else setAdj(p=>[...p,base]);}setSub(false);};
+  const save=()=>onSave(tabs.filter(a=>Object.keys(vals[a]).length>0).map(a=>({playerId:player.id,area:a,valores:vals[a],evaluadorId:user.id,evaluadorRol:user.rol,nota:notas[a],notaGeneral:notaG,adjuntos:adj})));
+  return<div className="bg-white rounded-2xl border border-[#DCEEF7] shadow-sm overflow-hidden">
+    <div className="px-6 py-4 border-b border-[#C3E0EE] flex items-center justify-between"><div><h3 className="font-bold text-[#0B2B45]">Nueva evaluación — {player.nombre} {player.apellido}</h3><p className="text-xs text-[#6E8DA3] mt-0.5">Evaluador/a: {user.nombre} · {fd(new Date())}</p></div><button onClick={onCancel}className="text-[#9A9182] hover:text-[#0B2B45] cursor-pointer"><I.X size={20}/></button></div>
+    <div className="flex border-b border-[#C3E0EE] bg-[#EAF6FB]">{tabs.map(a=><button key={a}onClick={()=>setTab(a)}className="flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-semibold border-b-2 transition-colors cursor-pointer"style={{borderColor:tab===a?AREAS[a].color:"transparent",color:tab===a?AREAS[a].color:"#6E8DA3"}}>{AREAS[a].label}{done(a)&&<I.Ck2 size={14}color="#159C6B"/>}</button>)}</div>
+    <div className="p-6"><p className="text-xs text-[#6E8DA3] mb-4 bg-[#EAF6FB] rounded-lg px-3 py-2">1=Insuficiente · 2=Regular · 3=Por encima norma · 4=Muy bueno · 5=Excepcional</p>
+      <div className="space-y-5">{AREAS[tab].vars.map(v=><div key={v.k}><div className="flex items-center justify-between mb-1.5"><span className="text-sm font-semibold text-[#0B2B45]">{v.l}</span>{vals[tab][v.k]&&<ScoreDot value={vals[tab][v.k]}/>}</div><Slider value={vals[tab][v.k]}onChange={val=>setVals(s=>({...s,[tab]:{...s[tab],[v.k]:val}}))}/></div>)}</div>
+      <Field label={`Observación — ${AREAS[tab].label}`}className="mt-6"><textarea value={notas[tab]}onChange={e=>setNotas(s=>({...s,[tab]:e.target.value}))}className="inp min-h-[70px]"placeholder="Anotación sobre este aspecto..."/></Field>
+    </div>
+    <div className="px-6 pb-6">
+      <Field label="Observación general (opcional)"><textarea value={notaG}onChange={e=>setNotaG(e.target.value)}className="inp min-h-[60px]"placeholder="Comentario global de la jornada..."/></Field>
+      <div className="mt-4"><span className="block text-xs font-semibold text-[#4F708A] mb-1.5">Adjuntos</span><label className="flex items-center justify-center gap-2 border-2 border-dashed border-[#C3E0EE] hover:border-[#1A8FC1] rounded-xl py-3 cursor-pointer transition-colors text-[#4F708A] hover:text-[#1A8FC1]">{sub?<I.Loader size={15}color="#1A8FC1"/>:<I.Clip size={15}color="currentColor"/>}<span className="text-sm">{sub?"Subiendo...":"Hacé clic para adjuntar"}</span><input type="file"multiple accept="image/*,video/*,.pdf"className="hidden"disabled={sub}onChange={e=>{hF(e.target.files);e.target.value="";;}}/></label>{adj.length>0&&<div className="flex flex-wrap gap-2 mt-2">{adj.map(a=><div key={a.id}className="flex items-center gap-2 bg-[#E4F1F8] border border-[#C3E0EE] rounded-lg pl-2 pr-1 py-1.5">{a.esImagen&&a.url?<img src={a.url}className="w-6 h-6 rounded object-cover"/>:<I.Clip size={13}color="#4F708A"/>}<span className="text-xs text-[#0B2B45] max-w-[100px] truncate">{a.nombre}</span><button onClick={()=>setAdj(p=>p.filter(x=>x.id!==a.id))}className="text-[#9A9182] hover:text-[#B8202E] cursor-pointer"><I.X size={12}/></button></div>)}</div>}</div>
+    </div>
+    <div className="px-6 py-4 bg-[#EAF6FB] border-t border-[#C3E0EE] flex items-center justify-between">
+      <div className="flex gap-2">{idx>0&&<button onClick={()=>setTab(tabs[idx-1])}className="bs"><I.ChevL size={15}/> Anterior</button>}{idx<tabs.length-1&&<button onClick={()=>setTab(tabs[idx+1])}className="bs">Siguiente <I.ChevR size={15}/></button>}</div>
+      <div className="flex gap-2"><button onClick={onCancel}className="bs">Cancelar</button><button onClick={save}disabled={!any}className="bp"><I.Save size={15}color="#fff"/> Guardar evaluación</button></div>
+    </div>
+  </div>;
+}
+
+/* ═══ PANEL NOTAS ═══ */
+function NotasP({player,notes,user,onAdd,getUser,canWrite}){
+  const[text,setText]=useState(""),[tipo,setTipo]=useState("nota"),[open,setOpen]=useState(false);
+  const list=notes.filter(n=>n.playerId===player.id).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  return<div className="space-y-4">
+    {canWrite&&<div className="bg-white rounded-2xl border-2 border-[#C3E0EE] overflow-hidden"><button onClick={()=>setOpen(o=>!o)}className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-[#EAF5FA] transition-colors cursor-pointer"><span className="flex items-center gap-2 text-sm font-bold text-[#0B2B45]"><span className="w-7 h-7 rounded-lg flex items-center justify-center"style={{background:"linear-gradient(135deg,#1FC9C2,#1B5FA8)"}}><I.Note size={14}color="#fff"/></span>Agregar nota o devolución</span>{open?<I.ChevL size={16}color="#1A8FC1"className="rotate-90"/>:<I.Plus size={16}color="#1A8FC1"/>}</button>{open&&<div className="px-4 pb-4 border-t border-[#EAF5FA] pt-3"><select value={tipo}onChange={e=>setTipo(e.target.value)}className="inp w-auto text-xs py-1.5 mb-2"><option value="nota">Nota personal</option><option value="devolucion">Devolución al jugador/a</option></select><textarea value={text}onChange={e=>setText(e.target.value)}className="inp min-h-[70px]"placeholder={tipo==="devolucion"?"Devolución para el jugador/a...":"Anotación personal..."}/><div className="flex justify-end mt-2"><button disabled={!text.trim()}onClick={()=>{onAdd({playerId:player.id,texto:text,tipo,autorId:user.id,autorRol:user.rol});setText("");setOpen(false);}}className="bp"><I.Note size={14}color="#fff"/> Guardar nota</button></div></div>}</div>}
+    {!list.length?<Empty icon={I.Note}title="No hay notas todavía"desc="Las notas quedan registradas con nombre y rol del autor."/>:list.map(n=>{const ac=n.tipo==="devolucion"?"#1A8FC1":"#E08E1D";return<div key={n.id}className="bg-white rounded-xl border border-[#DCEEF7] p-4"style={{borderLeft:`4px solid ${ac}`}}><div className="flex items-center justify-between mb-2"><span className="text-xs font-bold px-2 py-0.5 rounded-md"style={{background:`${ac}1A`,color:ac}}>{n.tipo==="devolucion"?"Devolución al jugador/a":"Nota personal"}</span><span className="text-xs text-[#6E8DA3]">{fdt(n.fecha)}</span></div><p className="text-sm text-[#163B57] mb-2">{n.texto}</p><p className="text-xs text-[#6E8DA3]">Por <b className="text-[#0B2B45]">{getUser(n.autorId)}</b> · <RolBadge rol={n.autorRol}/></p></div>;})}
+  </div>;
+}
+/* ═══ DASHBOARD JUGADOR ═══ */
+function PDash({player,evals}){
+  const ev=evals.filter(e=>e.playerId===player.id);
+  const avgA=a=>{const rel=ev.filter(e=>e.area===a);if(!rel.length)return null;const vs=AREAS[a].vars.map(v=>v.k);const s={},c={};vs.forEach(k=>{s[k]=0;c[k]=0;});rel.forEach(e=>vs.forEach(k=>{if(e.valores[k]){s[k]+=e.valores[k];c[k]++;}}));return vs.map(k=>({k,l:AREAS[a].vars.find(v=>v.k===k).l,v:c[k]?Math.round(s[k]/c[k]*10)/10:0}));};
+  const ov=a=>{const d=avgA(a);if(!d)return null;const vv=d.filter(x=>x.v>0).map(x=>x.v);return vv.length?Math.round(vv.reduce((a,b)=>a+b,0)/vv.length*10)/10:null;};
+  const scatDS=useMemo(()=>Object.entries(AREAS).map(([k,A])=>{const rel=ev.filter(e=>e.area===k);return{label:A.label,data:rel.map(e=>{const vs=Object.values(e.valores).filter(Boolean);const avg=vs.length?Math.round(vs.reduce((a,b)=>a+b,0)/vs.length*10)/10:null;return avg?{x:new Date(e.fecha).getTime(),y:avg,nota:e.nota}:null;}).filter(Boolean),backgroundColor:A.color+"CC",pointRadius:6};}).filter(d=>d.data.length>0),[ev]);
+  const allV=Object.entries(AREAS).flatMap(([k,A])=>A.vars.map(v=>({...v,area:k})));
+  const radDS=useMemo(()=>[{label:"General",data:allV.map(v=>{const rel=ev.filter(e=>e.area===v.area);const vv=rel.map(e=>e.valores[v.k]).filter(Boolean);return vv.length?Math.round(vv.reduce((a,b)=>a+b,0)/vv.length*10)/10:0;}),borderColor:"#0B3D62",backgroundColor:"#0B3D6230",borderWidth:2}],[ev]);
+  if(!ev.length)return<Empty icon={I.Board}title="Sin evaluaciones aún"desc="Cuando se cargue la primera evaluación el dashboard se completará."/>;
+  return<div className="rounded-3xl p-1"style={{background:"linear-gradient(8deg,#0B3D62 0%,#1B5FA8 55%,#1FC9C2 100%)"}}>
+    <div className="space-y-6 p-5 rounded-[20px]"style={{background:"linear-gradient(180deg,#EAF6FB 0%,#DCEEF7 100%)"}}>
+      <div className="grid grid-cols-3 gap-4">{Object.entries(AREAS).map(([k,A])=>{const avg=ov(k);return<div key={k}className="bg-white rounded-xl border border-[#DCEEF7] shadow-sm p-4"><p className="text-xs font-bold uppercase tracking-wide mb-2"style={{color:A.color}}>{A.label}</p><p className="text-3xl font-extrabold text-[#0B2B45]">{avg??<span className="text-xl text-[#C3E0EE]">—</span>}</p>{avg&&<div className="flex mt-1">{[1,2,3,4,5].map(n=><I.Star key={n}size={13}color={A.color}filled={n<=Math.round(avg)}/>)}</div>}</div>;})}</div>
+      <div className="bg-white rounded-xl border border-[#DCEEF7] shadow-sm p-5"><div className="flex items-center gap-2 mb-1"><I.Calendar size={16}color="#0B3D62"/><p className="text-sm font-bold text-[#0B2B45]">Línea de tiempo de ingresos</p></div><p className="text-xs text-[#6E8DA3] mb-3">Cada punto es una evaluación. Pasá el mouse para ver el detalle.</p><ScatC datasets={scatDS}/></div>
+      <div className="bg-white rounded-xl border border-[#DCEEF7] shadow-sm p-5"><p className="text-sm font-bold text-[#0B2B45] mb-3">Radar general de variables</p><RadarC datasets={radDS}labels={allV.map(v=>v.l)}/></div>
+      {Object.entries(AREAS).map(([k,A])=>{const d=avgA(k);if(!d)return null;return<div key={k}className="bg-white rounded-xl border border-[#DCEEF7] shadow-sm p-5"><p className="text-sm font-bold mb-3"style={{color:A.color}}>{A.label} — detalle</p><BarC data={d.map(x=>x.v)}labels={d.map(x=>x.l)}color={A.color}/></div>;})}
+    </div>
+  </div>;
+}
+
+/* ═══ HISTORIAL EVALUACIONES ═══ */
+function EHist({player,evals,getUser}){
+  const list=evals.filter(e=>e.playerId===player.id).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  if(!list.length)return<Empty icon={I.List}title="No hay evaluaciones"desc="Las evaluaciones aparecerán acá."/>;
+  return<div className="space-y-3">{list.map(e=>{const A=AREAS[e.area];return<div key={e.id}className="bg-white rounded-xl border border-[#DCEEF7] shadow-sm p-4"><div className="flex items-center justify-between mb-2"><div className="flex items-center gap-2"><span className="px-2 py-0.5 rounded-md text-xs font-bold text-white"style={{background:A.color}}>{A.label}</span><span className="text-xs text-[#6E8DA3]">{fdt(e.fecha)}</span></div><RolBadge rol={e.evaluadorRol}/></div><p className="text-xs text-[#4F708A] mb-2">Por <b className="text-[#0B2B45]">{getUser(e.evaluadorId)}</b></p><div className="flex flex-wrap gap-2 mb-2">{A.vars.map(v=><div key={v.k}className="flex items-center gap-1.5 bg-[#EAF6FB] px-2 py-1 rounded-lg border border-[#C3E0EE]"><span className="text-xs text-[#4F708A]">{v.l}</span>{e.valores[v.k]?<ScoreDot value={e.valores[v.k]}/>:<span className="text-xs text-[#C3E0EE]">—</span>}</div>)}</div>{e.nota&&<p className="text-sm text-[#163B57] bg-[#E4F1F8] rounded-lg px-3 py-2 mt-2">{e.nota}</p>}{e.notaGeneral&&<p className="text-sm text-[#163B57] italic mt-1.5">"{e.notaGeneral}"</p>}{e.adjuntos?.length>0&&<div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-[#E4F1F8]">{e.adjuntos.map((a,i)=><div key={i}className="flex items-center gap-1.5 bg-[#E4F1F8] border border-[#C3E0EE] rounded-lg pl-1.5 pr-2 py-1">{a.esImagen&&a.url?<img src={a.url}className="w-6 h-6 rounded object-cover"/>:<I.Clip size={11}color="#4F708A"/>}<span className="text-[11px] text-[#4F708A] max-w-[100px] truncate">{a.nombre}</span></div>)}</div>}</div>;})}</div>;
+}
+
+/* ═══ DATOS PERSONALES ═══ */
+function DatosP({player}){
+  const rows=[["Nombre completo",`${player.nombre} ${player.apellido}`],["DNI",player.dni||"—"],["Fecha de nacimiento",fd(player.fechaNacimiento)],["Lugar de nacimiento",player.lugarNacimiento||"—"],["Nacionalidad",player.nacionalidad||"—"],["Categoría",player.categoria],["Posición",player.posicion],["Mano dominante",player.manoDominante||"—"],["Altura",`${player.altura||"—"} cm`],["Peso",`${player.peso||"—"} kg`],["Envergadura",`${player.envergadura||"—"} cm`],["Alcance ataque",`${player.alcanceAtaque||"—"} cm`],["Alcance bloqueo",`${player.alcanceBloqueo||"—"} cm`],["Club actual",player.club||"—"],["Entrenador/a de club",player.entrenadorClub||"—"],["Localidad / Provincia",`${player.localidad||"—"} / ${player.provincia||"—"}`],["Teléfono",player.telefono||"—"],["Email",player.email||"—"],["Fecha de ingreso",fd(player.fechaIngreso)]];
+  return<div className="bg-white rounded-xl border border-[#DCEEF7] shadow-sm p-6"><div className="grid grid-cols-2 gap-0">{rows.map(([l,v])=><div key={l}className="flex justify-between border-b border-[#F0EBE0] py-2 px-1"><span className="text-sm text-[#6E8DA3]">{l}</span><span className="text-sm font-semibold text-[#0B2B45] text-right max-w-[60%]">{v}</span></div>)}</div></div>;
+}
+
+/* ═══ FICHA COMPLETA DEL JUGADOR ═══ */
+function PlayerProfile({player,user,evals,notes,onBack,onAddEval,onAddNote,onUpdate,onDelete,getUser}){
+  const[tab,setTab]=useState("dashboard"),[showEval,setSE]=useState(false),[editing,setEd]=useState(false),[upF,setUpF]=useState(false);
+  const canEval=["admin","head_coach","coach","scout"].includes(user.rol),canEdit=["admin","head_coach"].includes(user.rol),canDel=user.rol==="admin",canDash=ROLES[user.rol].nivel>=ROLES.coach.nivel;
+  const age=player.fechaNacimiento?Math.floor((Date.now()-new Date(player.fechaNacimiento))/(365.25*24*3600*1000)):null;
+  const hPhoto=async file=>{setUpF(true);const url=await upPhoto(file,player.id);setUpF(false);if(url)onUpdate({...player,fotoUrl:url});else alert("No se pudo subir la foto");};
+  if(editing)return<div className="p-8 max-w-5xl"><button onClick={()=>setEd(false)}className="flex items-center gap-1.5 text-sm text-[#4F708A] hover:text-[#0B2B45] mb-4 cursor-pointer"><I.ChevL size={16}/> Volver</button><PForm initial={player}canEditCat onCancel={()=>setEd(false)}onSave={d=>{onUpdate({...player,...d});setEd(false);}}/></div>;
+  const tabs2=[{id:"dashboard",l:"Dashboard",locked:!canDash},{id:"historial",l:"Historial"},{id:"notas",l:"Notas"},{id:"datos",l:"Datos personales"}];
+  return<div className="p-8 max-w-6xl">
+    <button onClick={onBack}className="flex items-center gap-1.5 text-sm text-[#4F708A] hover:text-[#0B2B45] mb-4 cursor-pointer"><I.ChevL size={16}/> Volver al listado</button>
+    <div className="bg-white rounded-2xl border border-[#DCEEF7] shadow-sm p-6 mb-6">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-4"><Avatar player={player}size="lg"showCamera onPhotoChange={hPhoto}uploading={upF}/><div><h2 className="text-xl font-bold text-[#0B2B45]">{player.nombre} {player.apellido}</h2><div className="flex items-center gap-3 text-sm text-[#6E8DA3] mt-1"><span>{player.posicion}</span><span>·</span><span>{player.categoria}</span>{age&&<><span>·</span><span>{age} años</span></>}</div><div className="flex items-center gap-2 mt-2">{player.dni&&<span className="text-xs bg-[#EAF6FB] px-2 py-1 rounded-md text-[#4F708A]">DNI {player.dni}</span>}{player.altura&&<span className="text-xs bg-[#EAF6FB] px-2 py-1 rounded-md text-[#4F708A]">{player.altura} cm</span>}<span className="text-xs px-2 py-1 rounded-full font-bold"style={{background:`${EST[player.estado||"watching"].c}22`,color:EST[player.estado||"watching"].c}}>{EST[player.estado||"watching"].e} {EST[player.estado||"watching"].l}</span></div></div></div>
+        <div className="flex gap-2">{canEdit&&<button onClick={()=>setEd(true)}className="bs"><I.Edit size={14}/> Editar</button>}{canDel&&<button onClick={()=>window.confirm(`¿Eliminar a ${player.nombre} ${player.apellido}?`)&&onDelete(player.id)}className="bs"style={{color:"#B8202E",borderColor:"#B8202E30"}}><I.Trash size={14}/> Eliminar</button>}{canEval&&<button onClick={()=>setSE(true)}className="bp"><I.Plus size={15}color="#fff"/> Nueva evaluación</button>}</div>
+      </div>
+      {player.observacionesGenerales&&<p className="text-sm text-[#4F708A] bg-[#EAF6FB] rounded-lg px-4 py-3 mt-4">{player.observacionesGenerales}</p>}
+    </div>
+    {showEval&&<div className="mb-6"><EForm player={player}user={user}onCancel={()=>setSE(false)}onSave={entries=>{onAddEval(entries);setSE(false);}}/></div>}
+    <div className="flex gap-1 mb-5 bg-white rounded-xl border border-[#DCEEF7] shadow-sm p-1 w-fit">{tabs2.map(t=><button key={t.id}disabled={t.locked}onClick={()=>setTab(t.id)}className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"style={{background:tab===t.id?"#0B3D62":"transparent",color:tab===t.id?"#fff":"#4F708A"}}>{t.locked&&<I.Lock size={13}/>}{t.l}</button>)}</div>
+    {tab==="dashboard"&&(canDash?<PDash player={player}evals={evals}/>:<Empty icon={I.Lock}title="Acceso restringido"desc="El dashboard es visible para entrenadores y administración."/>)}
+    {tab==="historial"&&<EHist player={player}evals={evals}getUser={getUser}/>}
+    {tab==="notas"&&<NotasP player={player}notes={notes}user={user}onAdd={onAddNote}getUser={getUser}canWrite={canEval}/>}
+    {tab==="datos"&&<DatosP player={player}/>}
+  </div>;
+}
+/* ═══ LISTADO DE JUGADORES ═══ */
+function PlayersList({players,evals,user,onSelect,onCreate,canCreate,onCompare}){
+  const[q,setQ]=useState(""),[cat,setCat]=useState("Todas"),[est,setEst]=useState("Todos"),[vista,setV]=useState("tarjetas"),[cm,setCm]=useState(false),[sel,setSel]=useState([]);
+  const tog=id=>setSel(p=>p.includes(id)?p.filter(x=>x!==id):p.length>=3?p:[...p,id]),exit=()=>{setCm(false);setSel([]);};
+  const avgGen=p=>{const avgs=Object.keys(AREAS).map(a=>{const rel=evals.filter(e=>e.playerId===p.id&&e.area===a);const all=rel.flatMap(e=>Object.values(e.valores).filter(Boolean));return all.length?Math.round(all.reduce((a,b)=>a+b,0)/all.length*10)/10:null;}).filter(Boolean);return avgs.length?Math.round(avgs.reduce((a,b)=>a+b,0)/avgs.length*10)/10:null;};
+  const avgArea=(p,a)=>{const rel=evals.filter(e=>e.playerId===p.id&&e.area===a);const all=rel.flatMap(e=>Object.values(e.valores).filter(Boolean));return all.length?Math.round(all.reduce((a,b)=>a+b,0)/all.length*10)/10:null;};
+  const fil=players.filter(p=>`${p.nombre} ${p.apellido} ${p.club||""}`.toLowerCase().includes(q.toLowerCase())&&(cat==="Todas"||p.categoria===cat)&&(est==="Todos"||(p.estado||"watching")===est));
+  return<div className="p-8">
+    <div className="flex items-center justify-between mb-6">
+      <div><h2 className="text-xl font-bold text-[#0B2B45]">Jugadores observados</h2><p className="text-sm text-[#6E8DA3] mt-0.5">{fil.length} jugador{fil.length!==1?"es":""} en la base</p></div>
+      <div className="flex items-center gap-2">
+        <div className="flex bg-white border border-[#C3E0EE] rounded-lg p-1">{[{id:"tarjetas",l:"Tarjetas",Icon:I.Grid},{id:"lista",l:"Lista",Icon:I.BarC}].map(v=><button key={v.id}onClick={()=>setV(v.id)}className="px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"style={{background:vista===v.id?"#1A8FC1":"transparent",color:vista===v.id?"#fff":"#4F708A"}}><v.Icon size={13}color={vista===v.id?"#fff":"#4F708A"}/>{v.l}</button>)}</div>
+        <button onClick={()=>cm?exit():setCm(true)}className="px-3 py-2 rounded-lg text-xs font-bold border flex items-center gap-1.5 transition-colors cursor-pointer"style={{background:cm?"#0B3D62":"white",color:cm?"#fff":"#0B3D62",borderColor:"#0B3D62"}}><I.Scale size={14}color={cm?"#fff":"#0B3D62"}/>{cm?"Cancelar":"Comparar"}</button>
+        {canCreate&&<button onClick={onCreate}className="bp"><I.Plus size={15}color="#fff"/> Nuevo jugador/a</button>}
+      </div>
+    </div>
+    <div className="flex gap-2 mb-4 flex-wrap">{["Todos",...Object.keys(EST)].map(k=>{const e=EST[k],cnt=k==="Todos"?players.length:players.filter(p=>(p.estado||"watching")===k).length,act=est===k;return<button key={k}onClick={()=>setEst(k)}className="px-3 py-1.5 rounded-full text-xs font-bold border transition-colors cursor-pointer"style={{background:act?(k==="Todos"?"#1A8FC1":`${e.c}25`):"transparent",color:act?(k==="Todos"?"#fff":e.c):(k==="Todos"?"#4F708A":e.c),borderColor:act?(k==="Todos"?"#1A8FC1":e.c):"#C3E0EE"}}>{k!=="Todos"&&e.e+" "}{k==="Todos"?"Todos":e.l} · {cnt}</button>;})}</div>
+    <div className="flex gap-3 mb-5"><div className="relative flex-1 max-w-sm"><div className="absolute left-3 top-1/2 -translate-y-1/2"><I.Search size={15}color="#6E8DA3"/></div><input value={q}onChange={e=>setQ(e.target.value)}placeholder="Buscar..."className="inp pl-9"/></div><select value={cat}onChange={e=>setCat(e.target.value)}className="inp w-40"><option>Todas</option>{CATS.map(c=><option key={c}>{c}</option>)}</select></div>
+    {!fil.length?<Empty icon={I.Users}title="No se encontraron jugadores"desc="Ajustá la búsqueda o agregá un nuevo jugador/a."/>:vista==="tarjetas"?
+    <div className="grid grid-cols-3 gap-4">{fil.map(p=>{const ga=avgGen(p),es=EST[p.estado||"watching"],si=sel.includes(p.id);return<button key={p.id}onClick={()=>cm?tog(p.id):onSelect(p)}className="bg-white rounded-xl border p-4 text-left hover:shadow-lg hover:-translate-y-0.5 transition-all relative cursor-pointer"style={{borderColor:si?"#0B3D62":"#DCEEF7",boxShadow:si?"0 0 0 2px #0B3D6233":"none"}}>{cm&&<span className="absolute top-3 right-3 text-[#0B3D62]">{si?<I.CkSq size={18}/>:<I.Sq size={18}/>}</span>}<div className="flex items-start justify-between mb-3"><Avatar player={p}size="sm"/>{!cm&&<div className="flex flex-col items-end gap-1">{ga&&<><p className="text-lg font-bold text-[#0B2B45] leading-none">{ga}</p><p className="text-[10px] text-[#6E8DA3]">promedio</p></>}<span className="text-[10px] font-bold px-2 py-0.5 rounded-full"style={{background:`${es.c}22`,color:es.c}}>{es.e} {es.l}</span></div>}</div><p className="font-bold text-[#0B2B45]">{p.nombre} {p.apellido}</p><p className="text-xs text-[#6E8DA3] mb-2">{p.posicion} · {p.categoria}</p><div className="flex gap-2 text-xs text-[#4F708A]">{p.altura&&<span className="bg-[#EAF6FB] px-1.5 py-0.5 rounded">{p.altura}cm</span>}{p.club&&<span className="bg-[#EAF6FB] px-1.5 py-0.5 rounded truncate max-w-[100px]">{p.club}</span>}</div></button>;})}</div>:
+    <div className="bg-white rounded-xl border border-[#DCEEF7] shadow-sm overflow-hidden"><div className="grid gap-2 px-4 py-2.5 bg-[#EAF6FB] text-[10px] font-bold uppercase tracking-wide text-[#6E8DA3]"style={{gridTemplateColumns:"2.2fr 1fr 1fr 1fr 0.8fr"}}><span>Jugador/a</span>{Object.entries(AREAS).map(([k,A])=><span key={k}style={{color:A.color}}>{A.label}</span>)}<span>Estado</span></div>{fil.map(p=>{const es=EST[p.estado||"watching"],si=sel.includes(p.id);return<button key={p.id}onClick={()=>cm?tog(p.id):onSelect(p)}className="w-full grid gap-2 items-center px-4 py-3 border-t border-[#EAF6FB] hover:bg-[#EAF5FA] transition-colors text-left cursor-pointer"style={{gridTemplateColumns:"2.2fr 1fr 1fr 1fr 0.8fr",background:si?"#EAF5FA":"transparent"}}><div className="flex items-center gap-3">{cm&&(si?<I.CkSq size={16}color="#0B3D62"/>:<I.Sq size={16}color="#AFD3E6"/>)}<Avatar player={p}size="sm"/><div className="min-w-0"><p className="font-bold text-[#0B2B45] text-sm truncate">{p.nombre} {p.apellido}</p><p className="text-[11px] text-[#6E8DA3]">{p.posicion}</p></div></div>{Object.entries(AREAS).map(([k,A])=>{const a=avgArea(p,k);return<div key={k}className="flex items-center gap-1.5"><div className="flex-1 h-1.5 rounded-full bg-[#D2E9F3] overflow-hidden"><div className="h-full rounded-full"style={{width:a?`${(a/5)*100}%`:"0%",background:A.color}}/></div><span className="text-[11px] font-bold w-6 text-right"style={{color:a?A.color:"#AFD3E6"}}>{a??<span>—</span>}</span></div>;})} <span className="text-[10px] font-bold px-2 py-0.5 rounded-full w-fit"style={{background:`${es.c}22`,color:es.c}}>{es.e} {es.l}</span></button>;})}</div>}
+    {cm&&<div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#0B3D62] rounded-2xl shadow-2xl px-5 py-3.5 flex items-center gap-4 z-50"><p className="text-white text-sm font-semibold">{!sel.length?"Elegí 2 o 3 jugadores/as":`${sel.length} seleccionado${sel.length!==1?"s":""} (máx. 3)`}</p><div className="flex -space-x-2">{sel.map(id=>{const p=players.find(pl=>pl.id===id);return p?<div key={id}className="ring-2 ring-[#0B3D62] rounded-full"><Avatar player={p}size="sm"/></div>:null;})}</div><button disabled={sel.length<2}onClick={()=>onCompare(sel)}className="px-4 py-2 rounded-xl text-sm font-bold text-white flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"style={{background:"linear-gradient(135deg,#1FC9C2,#1B5FA8)"}}><I.Scale size={15}color="#fff"/> Comparar</button><button onClick={exit}className="text-white/70 hover:text-white text-sm font-medium cursor-pointer">Cancelar</button></div>}
+  </div>;
+}
+/* ═══ COMPARACIÓN ═══ */
+function CompView({players,evals,onBack}){
+  const PC=["#0B3D62","#1A8FC1","#E08E1D"];
+  const allV=Object.entries(AREAS).flatMap(([k,A])=>A.vars.map(v=>({...v,area:k})));
+  const avgV=(p,ak,vk)=>{const rel=evals.filter(e=>e.playerId===p.id&&e.area===ak);const vv=rel.map(e=>e.valores[vk]).filter(Boolean);return vv.length?Math.round(vv.reduce((a,b)=>a+b,0)/vv.length*10)/10:0;};
+  const radDS=players.map((p,i)=>({label:`${p.nombre} ${p.apellido}`,data:allV.map(v=>avgV(p,v.area,v.k)),borderColor:PC[i],backgroundColor:PC[i]+"30",borderWidth:2}));
+  const lineA=ak=>{const dates=new Set();players.forEach(p=>evals.filter(e=>e.playerId===p.id&&e.area===ak).forEach(e=>dates.add(e.fecha.slice(0,10))));const sorted=[...dates].sort();if(!sorted.length)return null;const ds=players.map((p,i)=>{const byD={};evals.filter(e=>e.playerId===p.id&&e.area===ak).forEach(e=>{const iso=e.fecha.slice(0,10);const vs=Object.values(e.valores).filter(Boolean);if(vs.length)byD[iso]=Math.round(vs.reduce((a,b)=>a+b,0)/vs.length*10)/10;});return{label:`${p.nombre} ${p.apellido}`,data:sorted.map(d=>byD[d]??null),borderColor:PC[i],backgroundColor:PC[i]+"30",borderWidth:2,spanGaps:true,tension:0.3};});return{labels:sorted.map(fd),datasets:ds};};
+  const age=p=>p.fechaNacimiento?Math.floor((Date.now()-new Date(p.fechaNacimiento))/(365.25*24*3600*1000)):"—";
+  return<div className="p-8">
+    <button onClick={onBack}className="flex items-center gap-1.5 text-sm text-[#4F708A] hover:text-[#0B2B45] mb-4 cursor-pointer"><I.ChevL size={16}/> Volver al listado</button>
+    <h2 className="text-xl font-bold text-[#0B2B45] mb-1 flex items-center gap-2"><I.Scale size={19}color="#0B3D62"/> Comparación de jugadores/as</h2>
+    <p className="text-sm text-[#6E8DA3] mb-6">{players.length} perfiles con evaluaciones superpuestas.</p>
+    <div className="grid gap-4 mb-6"style={{gridTemplateColumns:`repeat(${players.length},1fr)`}}>{players.map((p,i)=><div key={p.id}className="bg-white rounded-2xl border-2 p-5"style={{borderColor:PC[i]}}><div className="flex items-center gap-3 mb-3"><Avatar player={p}size="md"/><div className="min-w-0"><p className="font-bold text-[#0B2B45] truncate">{p.nombre} {p.apellido}</p><p className="text-xs text-[#6E8DA3]">{p.posicion} · {p.categoria}</p></div></div><div className="grid grid-cols-2 gap-y-1 text-xs text-[#4F708A]"><span>Edad: <b className="text-[#0B2B45]">{age(p)}</b></span><span>Altura: <b className="text-[#0B2B45]">{p.altura||"—"} cm</b></span><span>Alcance: <b className="text-[#0B2B45]">{p.alcanceAtaque||"—"} cm</b></span><span>Club: <b className="text-[#0B2B45] truncate">{p.club||"—"}</b></span></div></div>)}</div>
+    <div className="bg-white rounded-2xl border border-[#DCEEF7] shadow-sm p-5 mb-6"><p className="text-sm font-bold text-[#0B2B45] mb-1">Radar comparativo — todas las variables superpuestas</p><div className="flex gap-4 mb-3 flex-wrap">{players.map((p,i)=><span key={p.id}className="flex items-center gap-1.5 text-xs font-semibold"style={{color:PC[i]}}><span className="w-2.5 h-2.5 rounded-full"style={{background:PC[i]}}/>{p.nombre} {p.apellido}</span>)}</div><RadarC datasets={radDS}labels={allV.map(v=>v.l)}/></div>
+    <div className="space-y-4"><div className="flex items-center gap-2"><I.Activity size={17}color="#0B3D62"/><p className="text-sm font-bold text-[#0B2B45]">Evolución comparada por área</p></div>
+    {Object.entries(AREAS).map(([k,A])=>{const ld=lineA(k);if(!ld)return<div key={k}className="bg-white rounded-xl border border-[#DCEEF7] p-4"><p className="text-sm font-bold mb-1"style={{color:A.color}}>{A.label}</p><p className="text-sm text-[#6E8DA3]">Sin evaluaciones para comparar.</p></div>;return<div key={k}className="bg-white rounded-2xl border border-[#DCEEF7] shadow-sm p-5"><p className="text-sm font-bold mb-3"style={{color:A.color}}>{A.label}</p><LineC datasets={ld.datasets}labels={ld.labels}/></div>;})}
+    </div>
+  </div>;
+}
+
+/* ═══ PANEL GENERAL ═══ */
+function GenDash({players,evals,user}){
+  const byCat=CATS.map(c=>({c,n:players.filter(p=>p.categoria===c).length})).filter(x=>x.n>0);
+  const recent=[...evals].sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).slice(0,6);
+  return<div className="p-8">
+    <h2 className="text-xl font-bold text-[#0B2B45] mb-1">Panel general</h2>
+    <p className="text-sm text-[#6E8DA3] mb-6">Bienvenido/a, {user.nombre}.</p>
+    <div className="grid grid-cols-4 gap-4 mb-6">{[{l:"Jugadores en base",v:players.length,c:"#0B3D62",Icon:I.Users},{l:"Evaluaciones totales",v:evals.length,c:"#1A8FC1",Icon:I.List},{l:"Categorías activas",v:byCat.length,c:"#159C6B",Icon:I.Ball},{l:"Evaluadores distintos",v:new Set(evals.map(e=>e.evaluadorId)).size,c:"#E08E1D",Icon:I.Eye}].map(s=><div key={s.l}className="bg-white rounded-2xl border border-[#DCEEF7] shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all p-5"><div className="flex items-center justify-between mb-3"><span className="text-xs font-bold text-[#6E8DA3] uppercase tracking-wide">{s.l}</span><span className="w-9 h-9 rounded-xl flex items-center justify-center"style={{background:`${s.c}16`}}><s.Icon size={16}color={s.c}/></span></div><p className="text-3xl font-extrabold tracking-tight"style={{color:s.c}}>{s.v}</p></div>)}</div>
+    <div className="rounded-3xl p-1 mb-6"style={{background:"linear-gradient(8deg,#0B3D62 0%,#1B5FA8 55%,#1FC9C2 100%)"}}>
+      <div className="grid grid-cols-2 gap-4 p-4 rounded-[20px]"style={{background:"linear-gradient(180deg,#EAF6FB 0%,#DCEEF7 100%)"}}>
+        <div className="bg-white rounded-xl border border-[#DCEEF7] shadow-sm p-5"><p className="text-sm font-bold text-[#0B2B45] mb-3">Jugadores por categoría</p><BarC data={byCat.map(c=>c.n)}labels={byCat.map(c=>c.c)}color="#0B3D62"/></div>
+        <div className="bg-white rounded-xl border border-[#DCEEF7] shadow-sm p-5"><p className="text-sm font-bold text-[#0B2B45] mb-3">Últimas evaluaciones</p><div className="space-y-2 max-h-64 overflow-auto">{!recent.length&&<p className="text-sm text-[#6E8DA3]">Sin evaluaciones todavía.</p>}{recent.map(e=>{const p=players.find(pl=>pl.id===e.playerId),A=AREAS[e.area];return<div key={e.id}className="flex items-center justify-between bg-[#EAF6FB] rounded-lg px-3 py-2"><div><p className="text-sm font-semibold text-[#0B2B45]">{p?`${p.nombre} ${p.apellido}`:"—"}</p><p className="text-xs text-[#6E8DA3]">{A.label} · {fd(e.fecha)}</p></div><span className="px-2 py-0.5 rounded-md text-xs font-bold text-white"style={{background:A.color}}>{A.label[0]}</span></div>;})}</div></div>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ═══ INFORMES ═══ */
+function Reports({players,evals,notes,getUser}){
+  const toCSV=rows=>{const h=Object.keys(rows[0]),esc=v=>`"${String(v??"").replace(/"/g,'""')}"`;return[h.join(","),...rows.map(r=>h.map(k=>esc(r[k])).join(","))].join("\n");};
+  const dl=(name,content)=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([content],{type:"text/csv;charset=utf-8;"}));a.download=name;document.body.appendChild(a);a.click();document.body.removeChild(a);};
+  return<div className="p-8 max-w-4xl">
+    <h2 className="text-xl font-bold text-[#0B2B45] mb-1">Informes y exportación</h2>
+    <p className="text-sm text-[#6E8DA3] mb-6">Exportá la base o generá un informe por jugador.</p>
+    <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="bg-white rounded-xl border border-[#DCEEF7] shadow-sm p-5"><I.File size={20}color="#159C6B"className="mb-2"/><p className="font-bold text-[#0B2B45] text-sm mb-1">Listado de jugadores</p><p className="text-xs text-[#6E8DA3] mb-3">Datos personales y físicos de toda la base.</p><button onClick={()=>dl("jugadores.csv",toCSV(players.map(p=>({Nombre:p.nombre,Apellido:p.apellido,DNI:p.dni||"",Categoría:p.categoria,Posición:p.posicion,Altura:p.altura||"",Club:p.club||""}))))}className="bs w-full justify-center"><I.DL size={14}/> CSV</button></div>
+      <div className="bg-white rounded-xl border border-[#DCEEF7] shadow-sm p-5"><I.List size={20}color="#1A8FC1"className="mb-2"/><p className="font-bold text-[#0B2B45] text-sm mb-1">Todas las evaluaciones</p><p className="text-xs text-[#6E8DA3] mb-3">Historial completo por área y evaluador.</p><button onClick={()=>dl("evaluaciones.csv",toCSV(evals.map(e=>{const p=players.find(pl=>pl.id===e.playerId);return{Jugador:p?`${p.nombre} ${p.apellido}`:"—",Área:AREAS[e.area].label,Evaluador:getUser(e.evaluadorId),Fecha:fdt(e.fecha),Nota:e.nota||""};;})))}className="bs w-full justify-center"><I.DL size={14}/> CSV</button></div>
+      <div className="bg-white rounded-xl border border-[#DCEEF7] shadow-sm p-5"><I.Note size={20}color="#E08E1D"className="mb-2"/><p className="font-bold text-[#0B2B45] text-sm mb-1">Notas y devoluciones</p><p className="text-xs text-[#6E8DA3] mb-3">Todas las notas del staff por jugador.</p><button onClick={()=>dl("notas.csv",toCSV(notes.map(n=>{const p=players.find(pl=>pl.id===n.playerId);return{Jugador:p?`${p.nombre} ${p.apellido}`:"—",Tipo:n.tipo,Autor:getUser(n.autorId),Fecha:fdt(n.fecha),Texto:n.texto};;})))}className="bs w-full justify-center"><I.DL size={14}/> CSV</button></div>
+    </div>
+    <p className="font-bold text-[#0B2B45] text-sm mb-3">Imprimir ficha individual (PDF)</p>
+    <div className="space-y-2">{players.map(p=><div key={p.id}className="flex items-center justify-between bg-white border border-[#DCEEF7] rounded-lg px-4 py-3 shadow-sm"><div><p className="font-semibold text-[#0B2B45] text-sm">{p.nombre} {p.apellido}</p><p className="text-xs text-[#6E8DA3]">{p.categoria} · {p.posicion}</p></div><button onClick={()=>{const w=window.open("","_blank"),pE=evals.filter(e=>e.playerId===p.id),pN=notes.filter(n=>n.playerId===p.id);const sec=Object.entries(AREAS).map(([k,A])=>{const rel=pE.filter(e=>e.area===k);if(!rel.length)return`<p>Sin evaluaciones en ${A.label}.</p>`;const last=rel[0];return`<h3>${A.label}</h3><table border="1"style="border-collapse:collapse"><tr>${A.vars.map(v=>`<th>${v.l}</th>`).join("")}</tr><tr>${A.vars.map(v=>`<td>${last.valores[v.k]||"—"}</td>`).join("")}</tr></table>`;}).join("");w.document.write(`<html><head><title>${p.nombre} ${p.apellido}</title><style>body{font-family:Arial;padding:32px}table{margin:10px 0}th,td{padding:6px 12px;font-size:13px}</style></head><body><h1 style="color:#0B3D62">${p.nombre} ${p.apellido}</h1><p>${p.posicion} · ${p.categoria} · DNI ${p.dni||"—"}</p>${sec}<h3>Notas</h3>${pN.map(n=>`<p><b>${n.tipo}</b>: ${n.texto} (${getUser(n.autorId)}, ${fd(n.fecha)})</p>`).join("")||"<p>Sin notas.</p>"}</body></html>`);w.document.close();w.print();}}className="bs"><I.DL size={14}/> PDF</button></div>)}</div>
+  </div>;
+}
+
+/* ═══ ADMINISTRACIÓN ═══ */
+function AdminP({players,evals,notes}){
+  return<div className="p-8 max-w-4xl">
+    <div className="flex items-center gap-2 mb-1"><I.Shield size={20}color="#B8202E"/><h2 className="text-xl font-bold text-[#0B2B45]">Administración</h2></div>
+    <p className="text-sm text-[#6E8DA3] mb-6">Solo visible para el rol Administrador/a.</p>
+    <div className="grid grid-cols-3 gap-4 mb-6">{[{l:"Jugadores",v:players.length,c:"#0B3D62",Icon:I.Users},{l:"Evaluaciones",v:evals.length,c:"#1A8FC1",Icon:I.List},{l:"Notas",v:notes.length,c:"#E08E1D",Icon:I.Note}].map(s=><div key={s.l}className="bg-white rounded-2xl border border-[#DCEEF7] shadow-sm p-5"><div className="flex items-center justify-between mb-3"><span className="text-xs font-bold text-[#6E8DA3] uppercase tracking-wide">{s.l}</span><span className="w-9 h-9 rounded-xl flex items-center justify-center"style={{background:`${s.c}16`}}><s.Icon size={16}color={s.c}/></span></div><p className="text-3xl font-extrabold"style={{color:s.c}}>{s.v}</p></div>)}</div>
+    <div className="bg-white rounded-xl border border-[#DCEEF7] shadow-sm p-5 mb-5"><p className="font-bold text-[#0B2B45] text-sm mb-3">Jerarquía de accesos</p>{Object.entries(ROLES).map(([k,r])=><div key={k}className="flex items-center justify-between border-b border-[#EAF6FB] py-2.5 last:border-0"><RolBadge rol={k}/><span className="text-xs text-[#4F708A] text-right max-w-[70%]">{k==="admin"&&"Acceso total — alta/baja, edición y eliminación"}{k==="head_coach"&&"Visualiza todas las categorías, edita y evalúa"}{k==="coach"&&"Visualiza y evalúa su categoría, deja notas"}{k==="scout"&&"Carga jugadores y evaluaciones"}</span></div>)}</div>
+    <div className="bg-[#E08E1D]/10 border border-[#E08E1D]/30 rounded-xl p-4 flex gap-3"><I.Alert size={18}color="#E08E1D"/><p className="text-xs text-[#7A5A20] leading-relaxed">Para agregar usuarios al staff: <b>supabase.com → Authentication → Users → Add user</b>, creá email y contraseña, y luego en SQL Editor insertá el perfil con el rol y categoría.</p></div>
+  </div>;
+}
+/* ═══ APP PRINCIPAL ═══ */
+function App(){
+  const[session,setSession]=useState(undefined),[user,setUser]=useState(null),[staff,setStaff]=useState([]),[players,setPlayers]=useState([]),[evals,setEvals]=useState([]),[notes,setNotes]=useState([]),[notifs,setNotifs]=useState([]),[loading,setLoading]=useState(true),[view,setView]=useState("dashboard"),[selP,setSelP]=useState(null),[creating,setCreating]=useState(false),[comparing,setComparing]=useState(null);
+
+  useEffect(()=>{
+    sb.auth.getSession().then(({data})=>setSession(data.session));
+    const{data:L}=sb.auth.onAuthStateChange((_,s)=>setSession(s));
+    return()=>L.subscription.unsubscribe();
+  },[]);
+
+  useEffect(()=>{
+    if(session===undefined)return;
+    if(!session){setUser(null);setLoading(false);return;}
+    (async()=>{
+      setLoading(true);
+      const{data:prof,error}=await sb.from("profiles").select("*").eq("id",session.user.id).single();
+      if(error||!prof){console.error("No se encontró perfil para este usuario");setUser(null);setLoading(false);return;}
+      setUser({id:prof.id,nombre:prof.nombre,rol:prof.rol,categoria:prof.categoria,notifLastSeen:prof.notif_last_seen});
+      const fetched=await Promise.all([
+        sb.from("players").select("*").order("fecha_ingreso",{ascending:false}),
+        sb.from("evaluations").select("*").order("fecha",{ascending:false}),
+        sb.from("notes").select("*").order("fecha",{ascending:false}),
+        sb.from("notifications").select("*").order("fecha",{ascending:false}).limit(200),
+        sb.from("profiles").select("*"),
+      ]);
+      setPlayers(fetched[0].data?.map(pFD)||[]);
+      setEvals(fetched[1].data?.map(eFD)||[]);
+      setNotes(fetched[2].data?.map(nFD)||[]);
+      setNotifs(fetched[3].data?.map(ntFD)||[]);
+      setStaff(fetched[4].data||[]);
+      setLoading(false);
+    })();
+  },[session]);
+
+  const getUser=id=>staff.find(s=>s.id===id)?.nombre||"Usuario";
+  const navTo=v=>{setView(v);setSelP(null);setCreating(false);setComparing(null);};
+  const jump=p=>{setCreating(false);setComparing(null);setSelP(p);};
+  const markSeen=async ts=>{setUser(u=>({...u,notifLastSeen:ts}));await sb.from("profiles").update({notif_last_seen:ts}).eq("id",user.id);};
+
+  const handleCreate=async data=>{
+    const{data:row,error}=await sb.from("players").insert({...pTD(data),ingresado_por:user.id}).select().single();
+    if(error){alert("Error al guardar jugador");console.error(error);return;}
+    const np=pFD(row);setPlayers(p=>[np,...p]);setCreating(false);setSelP(np);
+  };
+  const handleUpdate=async upd=>{
+    const{error}=await sb.from("players").update(pTD(upd)).eq("id",upd.id);
+    if(error){alert("Error al guardar cambios");return;}
+    setPlayers(p=>p.map(x=>x.id===upd.id?upd:x));setSelP(upd);
+  };
+  const handleDelete=async id=>{
+    const{error}=await sb.from("players").delete().eq("id",id);
+    if(error){alert("Error al eliminar");return;}
+    setPlayers(p=>p.filter(x=>x.id!==id));setEvals(p=>p.filter(x=>x.playerId!==id));setNotes(p=>p.filter(x=>x.playerId!==id));setSelP(null);
+  };
+  const handleAddEval=async entries=>{
+    const rows=entries.map(e=>({player_id:e.playerId,area:e.area,valores:e.valores,evaluador_id:user.id,evaluador_rol:user.rol,nota:e.nota,nota_general:e.notaGeneral,adjuntos:e.adjuntos||[]}));
+    const{data:ins,error}=await sb.from("evaluations").insert(rows).select();
+    if(error){alert("Error al guardar evaluación");return;}
+    const newE=ins.map(eFD);setEvals(p=>[...newE,...p]);
+    const tp=players.find(p=>p.id===entries[0]?.playerId);
+    if(tp){const nr=newE.map(e=>({player_id:e.playerId,player_name:`${tp.nombre} ${tp.apellido}`,categoria:tp.categoria,area:e.area,evaluador_id:user.id,evaluador_nombre:user.nombre}));const{data:iN}=await sb.from("notifications").insert(nr).select();if(iN)setNotifs(p=>[...iN.map(ntFD),...p]);}
+    setSelP(p=>players.find(x=>x.id===p?.id)||p);
+  };
+  const handleAddNote=async note=>{
+    const{data,error}=await sb.from("notes").insert({player_id:note.playerId,texto:note.texto,tipo:note.tipo,autor_id:user.id,autor_rol:user.rol}).select().single();
+    if(error){alert("Error al guardar nota");return;}
+    setNotes(p=>[nFD(data),...p]);
+  };
+
+  if(session===undefined||loading)return<div className="min-h-screen flex items-center justify-center bg-[#0B3D62] text-white gap-2"><I.Loader size={18}color="#fff"/> Cargando...</div>;
+  if(!session||!user)return<Login/>;
+  const canCreate=["admin","head_coach","coach","scout"].includes(user.rol);
+
+  const content=()=>{
+    if(comparing)return<CompView players={comparing}evals={evals}onBack={()=>setComparing(null)}/>;
+    if(selP)return<PlayerProfile player={selP}user={user}evals={evals}notes={notes}onBack={()=>setSelP(null)}onAddEval={handleAddEval}onAddNote={handleAddNote}onUpdate={handleUpdate}onDelete={handleDelete}getUser={getUser}/>;
+    if(creating)return<div className="p-8 max-w-5xl"><button onClick={()=>setCreating(false)}className="flex items-center gap-1.5 text-sm text-[#4F708A] hover:text-[#0B2B45] mb-4 cursor-pointer"><I.ChevL size={16}/> Volver</button><h2 className="text-xl font-bold text-[#0B2B45] mb-4">Nuevo jugador/a observado</h2><PForm canEditCat onCancel={()=>setCreating(false)}onSave={handleCreate}/></div>;
+    if(view==="dashboard")return<GenDash players={players}evals={evals}user={user}/>;
+    if(view==="players")return<PlayersList players={players}evals={evals}user={user}canCreate={canCreate}onSelect={setSelP}onCreate={()=>setCreating(true)}onCompare={ids=>setComparing(players.filter(p=>ids.includes(p.id)))}/>;
+    if(view==="reports")return<Reports players={players}evals={evals}notes={notes}getUser={getUser}/>;
+    if(view==="admin")return<AdminP players={players}evals={evals}notes={notes}/>;
+    return null;
+  };
+
+  return<Shell user={user}onLogout={async()=>{await sb.auth.signOut();setSelP(null);setComparing(null);navTo("dashboard");}}view={view}setView={navTo}players={players}onJump={jump}notifications={notifs}lastSeen={user.notifLastSeen}onMark={markSeen}>{content()}</Shell>;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+
+</script>
+</body>
+</html>
