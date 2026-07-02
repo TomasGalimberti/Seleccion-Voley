@@ -163,8 +163,17 @@ function Login(){
   const[ok,setOk]=useState("");
   const[loading,setL]=useState(false);
   const[cat,setCat]=useState(null);
+  const[forgotOk,setForgotOk]=useState("");
 
-  const reset=()=>{setEmail("");setPass("");setPass2("");setNombre("");setErr("");setOk("");};
+  const reset=()=>{setEmail("");setPass("");setPass2("");setNombre("");setErr("");setOk("");setForgotOk("");};
+
+  const handleForgot=async()=>{
+    if(!email){setErr("Ingresá tu email primero para recuperar la contraseña.");return;}
+    setErr("");
+    const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
+    if(error){setErr("No se pudo enviar el email. Verificá que el email sea correcto.");}
+    else{setForgotOk("Te enviamos un email para restablecer tu contraseña. Revisá tu bandeja de entrada.");}
+  };
 
   const handleLogin=async e=>{
     e.preventDefault();setErr("");setL(true);
@@ -224,7 +233,7 @@ function Login(){
             {CATS2.map(c=><button key={c.id} disabled={c.soon}
               onClick={()=>setCat(p=>p?.id===c.id?null:c)}
               style={{background:cat?.id===c.id?c.accent+"20":"rgba(255,255,255,0.04)",border:cat?.id===c.id?"1px solid "+c.accent:"0.5px solid rgba(255,255,255,0.08)",borderRadius:8,padding:"8px 4px",textAlign:"center",fontSize:11,color:c.soon?"rgba(255,255,255,0.18)":cat?.id===c.id?"#EAF4FA":"rgba(255,255,255,0.45)",cursor:c.soon?"not-allowed":"pointer"}}>
-              {c.id==="seleccion"&&<span style={{display:"block",marginBottom:4}}>
+              {c.id==="seleccion"&&<span style={{display:"flex",justifyContent:"center",marginBottom:4}}>
                 <svg width="20" height="13" viewBox="0 0 60 40"><rect width="60" height="40" rx="4" fill="#fff"/><rect width="60" height="13.3" rx="4" fill="#75AADB"/><rect y="26.7" width="60" height="13.3" fill="#75AADB"/><circle cx="30" cy="20" r="5" fill="#F6B40E"/></svg>
               </span>}
               {c.id==="veedor"&&<I.Search size={18} color={cat?.id===c.id?c.accent:"rgba(255,255,255,0.4)"} className="block mx-auto mb-1"/>}
@@ -247,6 +256,10 @@ function Login(){
             <button type="submit" disabled={loading} style={{width:"100%",background:"linear-gradient(135deg,#3FD0E0,#1B5FA8)",border:"none",borderRadius:8,padding:10,color:"white",fontWeight:500,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
               {loading&&<I.Loader size={15} color="#fff"/>}{loading?"Ingresando...":"Ingresar"}
             </button>
+            <button type="button" onClick={handleForgot} style={{width:"100%",background:"none",border:"none",marginTop:8,fontSize:11,color:"rgba(255,255,255,0.35)",cursor:"pointer",textAlign:"center"}}>
+              ¿Olvidaste tu contraseña?
+            </button>
+            {forgotOk&&<div style={{background:"rgba(52,211,153,0.12)",border:"0.5px solid rgba(52,211,153,0.25)",borderRadius:8,padding:"8px 12px",marginTop:6,fontSize:11,color:"#34D399",textAlign:"center"}}>{forgotOk}</div>}
           </form>}
         </div>}
 
