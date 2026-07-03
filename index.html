@@ -119,12 +119,12 @@ function StarRating({value,onChange}){
         onClick={()=>onChange(n===v?undefined:n)}
         onMouseEnter={()=>setHover(n)}
         onMouseLeave={()=>setHover(0)}
-        style={{background:"none",border:"none",cursor:"pointer",padding:"1px 3px",fontSize:28,lineHeight:1,color:n<=active?"#F6B40E":"rgba(255,255,255,0.18)",transition:"color .08s",textShadow:"none"}}>
+        style={{background:"none",border:"none",cursor:"pointer",padding:"1px 3px",fontSize:28,lineHeight:1,color:n<=active?"#F6B40E":"#C8D8E2",transition:"color .08s",textShadow:"none"}}>
         {n<=active?"★":"☆"}
       </button>)}
       {v>0&&<span style={{fontSize:16,fontWeight:500,color:"#F6B40E",marginLeft:6}}>{v}</span>}
     </div>
-    <p style={{fontSize:11,color:v===0?"rgba(255,255,255,0.3)":"#F6B40E",margin:0,fontWeight:500}}>
+    <p style={{fontSize:11,color:v===0?"#9BBCCC":"#E08E1D",margin:0,fontWeight:500}}>
       {v===0?"Sin calificar — clic para puntuar":`${LABELS[v]}`}
     </p>
   </div>;
@@ -684,29 +684,193 @@ function PlayerProfile({player,user,evals,notes,onBack,onAddEval,onAddNote,onUpd
 }
 /* ═══ LISTADO DE JUGADORES ═══ */
 function PlayersList({players,evals,user,onSelect,onCreate,canCreate,onCompare}){
-  const[q,setQ]=useState(""),[cat,setCat]=useState("Todas"),[est,setEst]=useState("Todos"),[vista,setV]=useState("tarjetas"),[cm,setCm]=useState(false),[sel,setSel]=useState([]);
-  const tog=id=>setSel(p=>p.includes(id)?p.filter(x=>x!==id):p.length>=3?p:[...p,id]),exit=()=>{setCm(false);setSel([]);};
-  const avgGen=p=>{const avgs=Object.keys(AREAS).map(a=>{const rel=evals.filter(e=>e.playerId===p.id&&e.area===a);const all=rel.flatMap(e=>Object.values(e.valores).filter(Boolean));return all.length?Math.round(all.reduce((a,b)=>a+b,0)/all.length*10)/10:null;}).filter(Boolean);return avgs.length?Math.round(avgs.reduce((a,b)=>a+b,0)/avgs.length*10)/10:null;};
-  const avgArea=(p,a)=>{const rel=evals.filter(e=>e.playerId===p.id&&e.area===a);const all=rel.flatMap(e=>Object.values(e.valores).filter(Boolean));return all.length?Math.round(all.reduce((a,b)=>a+b,0)/all.length*10)/10:null;};
-  const fil=players.filter(p=>`${p.nombre} ${p.apellido} ${p.club||""}`.toLowerCase().includes(q.toLowerCase())&&(cat==="Todas"||p.categoria===cat)&&(est==="Todos"||(p.estado||"watching")===est));
-  return<div className="p-8">
-    <div className="flex items-center justify-between mb-6">
-      <div><h2 className="text-xl font-bold text-[#0B2B45]">Jugadores observados</h2><p className="text-sm text-[#6E8DA3] mt-0.5">{fil.length} jugador{fil.length!==1?"es":""} en la base</p></div>
-      <div className="flex items-center gap-2">
-        <div className="flex bg-white border border-[#C3E0EE] rounded-lg p-1">{[{id:"tarjetas",l:"Tarjetas",Icon:I.Grid},{id:"lista",l:"Lista",Icon:I.BarC}].map(v=><button key={v.id}onClick={()=>setV(v.id)}className="px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"style={{background:vista===v.id?"#1A8FC1":"transparent",color:vista===v.id?"#fff":"#4F708A"}}><v.Icon size={13}color={vista===v.id?"#fff":"#4F708A"}/>{v.l}</button>)}</div>
-        <button onClick={()=>cm?exit():setCm(true)}className="px-3 py-2 rounded-lg text-xs font-bold border flex items-center gap-1.5 transition-colors cursor-pointer"style={{background:cm?"#0B3D62":"white",color:cm?"#fff":"#0B3D62",borderColor:"#0B3D62"}}><I.Scale size={14}color={cm?"#fff":"#0B3D62"}/>{cm?"Cancelar":"Comparar"}</button>
-        {canCreate&&<button onClick={onCreate}className="bp"><I.Plus size={15}color="#fff"/> Nuevo jugador/a</button>}
+  const[q,setQ]=useState("");
+  const[cat,setCat]=useState("Todas");
+  const[est,setEst]=useState("Todos");
+  const[vista,setV]=useState("tarjetas");
+  const[cm,setCm]=useState(false);
+  const[sel,setSel]=useState([]);
+
+  const tog=id=>setSel(p=>p.includes(id)?p.filter(x=>x!==id):p.length>=3?p:[...p,id]);
+  const exit=()=>{setCm(false);setSel([]);};
+
+  const avgArea=(p,a)=>{
+    const rel=evals.filter(e=>e.playerId===p.id&&e.area===a);
+    const all=rel.flatMap(e=>Object.values(e.valores).filter(Boolean));
+    return all.length?Math.round(all.reduce((a,b)=>a+b,0)/all.length*10)/10:null;
+  };
+  const avgGen=p=>{
+    const avgs=Object.keys(AREAS).map(a=>avgArea(p,a)).filter(Boolean);
+    return avgs.length?Math.round(avgs.reduce((a,b)=>a+b,0)/avgs.length*10)/10:null;
+  };
+  const scoreColor=v=>{
+    if(!v)return"#6E8DA3";
+    if(v>=4.5)return"#1A8FC1";
+    if(v>=3.5)return"#5C9C3A";
+    if(v>=2.5)return"#D9A800";
+    return"#D9534F";
+  };
+
+  const fil=players.filter(p=>
+    `${p.nombre} ${p.apellido} ${p.club||""}`.toLowerCase().includes(q.toLowerCase())&&
+    (cat==="Todas"||p.categoria===cat)&&
+    (est==="Todos"||(p.estado||"watching")===est)
+  );
+
+  return<div style={{padding:"2rem"}}>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1.5rem"}}>
+      <div>
+        <h2 style={{fontSize:20,fontWeight:500,color:"rgba(255,255,255,0.9)",margin:0}}>Jugadores observados</h2>
+        <p style={{fontSize:13,color:"rgba(255,255,255,0.4)",margin:"2px 0 0"}}>{fil.length} jugador{fil.length!==1?"es":""} en la base</p>
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:8}}>
+        <div style={{display:"flex",background:"rgba(255,255,255,0.06)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:8,padding:3}}>
+          {[{id:"tarjetas",Icon:I.Grid},{id:"lista",Icon:I.BarC}].map(v=>
+            <button key={v.id} onClick={()=>setV(v.id)}
+              style={{padding:"6px 10px",borderRadius:6,border:"none",background:vista===v.id?"rgba(255,255,255,0.15)":"transparent",cursor:"pointer",display:"flex",alignItems:"center"}}>
+              <v.Icon size={14} color={vista===v.id?"#EAF4FA":"rgba(255,255,255,0.35)"}/>
+            </button>
+          )}
+        </div>
+        <button onClick={()=>cm?exit():setCm(true)}
+          style={{padding:"7px 12px",borderRadius:8,border:`0.5px solid ${cm?"#3FD0E0":"rgba(255,255,255,0.15)"}`,background:cm?"rgba(63,208,224,0.15)":"transparent",color:cm?"#3FD0E0":"rgba(255,255,255,0.6)",cursor:"pointer",fontSize:12,fontWeight:500,display:"flex",alignItems:"center",gap:6}}>
+          <I.Scale size={14} color={cm?"#3FD0E0":"rgba(255,255,255,0.6)"}/>{cm?"Cancelar":"Comparar"}
+        </button>
+        {canCreate&&<button onClick={onCreate}
+          style={{padding:"7px 14px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#3FD0E0,#1B5FA8)",color:"white",cursor:"pointer",fontSize:12,fontWeight:500,display:"flex",alignItems:"center",gap:6}}>
+          <I.Plus size={14} color="#fff"/> Nuevo jugador/a
+        </button>}
       </div>
     </div>
-    <div className="flex gap-2 mb-4 flex-wrap">{["Todos",...Object.keys(EST)].map(k=>{const e=EST[k],cnt=k==="Todos"?players.length:players.filter(p=>(p.estado||"watching")===k).length,act=est===k;return<button key={k}onClick={()=>setEst(k)}className="px-3 py-1.5 rounded-full text-xs font-bold border transition-colors cursor-pointer"style={{background:act?(k==="Todos"?"#1A8FC1":`${e.c}25`):"transparent",color:act?(k==="Todos"?"#fff":e.c):(k==="Todos"?"#4F708A":e.c),borderColor:act?(k==="Todos"?"#1A8FC1":e.c):"#C3E0EE"}}>{k!=="Todos"&&e.e+" "}{k==="Todos"?"Todos":e.l} · {cnt}</button>;})}</div>
-    <div className="flex gap-3 mb-5"><div className="relative flex-1 max-w-sm"><div className="absolute left-3 top-1/2 -translate-y-1/2"><I.Search size={15}color="#6E8DA3"/></div><input value={q}onChange={e=>setQ(e.target.value)}placeholder="Buscar..."className="inp pl-9"/></div><select value={cat}onChange={e=>setCat(e.target.value)}className="inp w-40"><option>Todas</option>{CATS.map(c=><option key={c}>{c}</option>)}</select></div>
-    {!fil.length?<Empty icon={I.Users}title="No se encontraron jugadores"desc="Ajustá la búsqueda o agregá un nuevo jugador/a."/>:vista==="tarjetas"?
-    <div className="grid grid-cols-3 gap-4">{fil.map(p=>{const ga=avgGen(p),es=EST[p.estado||"watching"],si=sel.includes(p.id);return<button key={p.id}onClick={()=>cm?tog(p.id):onSelect(p)}className="bg-white rounded-xl border p-4 text-left hover:shadow-lg hover:-translate-y-0.5 transition-all relative cursor-pointer"style={{borderColor:si?"#0B3D62":"#DCEEF7",boxShadow:si?"0 0 0 2px #0B3D6233":"none"}}>{cm&&<span className="absolute top-3 right-3 text-[#0B3D62]">{si?<I.CkSq size={18}/>:<I.Sq size={18}/>}</span>}<div className="flex items-start justify-between mb-3"><Avatar player={p}size="sm"/>{!cm&&<div className="flex flex-col items-end gap-1">{ga&&<><p className="text-lg font-bold text-[#0B2B45] leading-none">{ga}</p><p className="text-[10px] text-[#6E8DA3]">promedio</p></>}<span className="text-[10px] font-bold px-2 py-0.5 rounded-full"style={{background:`${es.c}22`,color:es.c}}>{es.e} {es.l}</span></div>}</div><p className="font-bold text-[#0B2B45]">{p.nombre} {p.apellido}</p><p className="text-xs text-[#6E8DA3] mb-2">{p.posicion} · {p.categoria}</p><div className="flex gap-2 text-xs text-[#4F708A]">{p.altura&&<span className="bg-[#EAF6FB] px-1.5 py-0.5 rounded">{p.altura}cm</span>}{p.club&&<span className="bg-[#EAF6FB] px-1.5 py-0.5 rounded truncate max-w-[100px]">{p.club}</span>}</div></button>;})}</div>:
-    <div className="bg-white rounded-xl border border-[#DCEEF7] shadow-sm overflow-hidden"><div className="grid gap-2 px-4 py-2.5 bg-[#EAF6FB] text-[10px] font-bold uppercase tracking-wide text-[#6E8DA3]"style={{gridTemplateColumns:"2.2fr 1fr 1fr 1fr 0.8fr"}}><span>Jugador/a</span>{Object.entries(AREAS).map(([k,A])=><span key={k}style={{color:A.color}}>{A.label}</span>)}<span>Estado</span></div>{fil.map(p=>{const es=EST[p.estado||"watching"],si=sel.includes(p.id);return<button key={p.id}onClick={()=>cm?tog(p.id):onSelect(p)}className="w-full grid gap-2 items-center px-4 py-3 border-t border-[#EAF6FB] hover:bg-[#EAF5FA] transition-colors text-left cursor-pointer"style={{gridTemplateColumns:"2.2fr 1fr 1fr 1fr 0.8fr",background:si?"#EAF5FA":"transparent"}}><div className="flex items-center gap-3">{cm&&(si?<I.CkSq size={16}color="#0B3D62"/>:<I.Sq size={16}color="#AFD3E6"/>)}<Avatar player={p}size="sm"/><div className="min-w-0"><p className="font-bold text-[#0B2B45] text-sm truncate">{p.nombre} {p.apellido}</p><p className="text-[11px] text-[#6E8DA3]">{p.posicion}</p></div></div>{Object.entries(AREAS).map(([k,A])=>{const a=avgArea(p,k);return<div key={k}className="flex items-center gap-1.5"><div className="flex-1 h-1.5 rounded-full bg-[#D2E9F3] overflow-hidden"><div className="h-full rounded-full"style={{width:a?`${(a/5)*100}%`:"0%",background:A.color}}/></div><span className="text-[11px] font-bold w-6 text-right"style={{color:a?A.color:"#AFD3E6"}}>{a??<span>—</span>}</span></div>;})} <span className="text-[10px] font-bold px-2 py-0.5 rounded-full w-fit"style={{background:`${es.c}22`,color:es.c}}>{es.e} {es.l}</span></button>;})}</div>}
-    {cm&&<div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#0B3D62] rounded-2xl shadow-2xl px-5 py-3.5 flex items-center gap-4 z-50"><p className="text-white text-sm font-semibold">{!sel.length?"Elegí 2 o 3 jugadores/as":`${sel.length} seleccionado${sel.length!==1?"s":""} (máx. 3)`}</p><div className="flex -space-x-2">{sel.map(id=>{const p=players.find(pl=>pl.id===id);return p?<div key={id}className="ring-2 ring-[#0B3D62] rounded-full"><Avatar player={p}size="sm"/></div>:null;})}</div><button disabled={sel.length<2}onClick={()=>onCompare(sel)}className="px-4 py-2 rounded-xl text-sm font-bold text-white flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"style={{background:"linear-gradient(135deg,#1FC9C2,#1B5FA8)"}}><I.Scale size={15}color="#fff"/> Comparar</button><button onClick={exit}className="text-white/70 hover:text-white text-sm font-medium cursor-pointer">Cancelar</button></div>}
+
+    <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
+      {["Todos",...Object.keys(EST)].map(k=>{
+        const e=EST[k];
+        const cnt=k==="Todos"?players.length:players.filter(p=>(p.estado||"watching")===k).length;
+        const act=est===k;
+        return<button key={k} onClick={()=>setEst(k)}
+          style={{padding:"5px 12px",borderRadius:20,border:`0.5px solid ${act?(k==="Todos"?"#3FD0E0":`${e.c}88`):"rgba(255,255,255,0.12)"}`,background:act?(k==="Todos"?"rgba(63,208,224,0.15)":`${e.c}22`):"transparent",color:act?(k==="Todos"?"#3FD0E0":e.c):"rgba(255,255,255,0.4)",cursor:"pointer",fontSize:11,fontWeight:act?500:400}}>
+          {k!=="Todos"&&e.e+" "}{k==="Todos"?"Todos":e.l} · {cnt}
+        </button>;
+      })}
+    </div>
+
+    <div style={{display:"flex",gap:10,marginBottom:16}}>
+      <div style={{position:"relative",flex:1,maxWidth:360}}>
+        <div style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)"}}>
+          <I.Search size={14} color="rgba(255,255,255,0.35)"/>
+        </div>
+        <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Buscar jugador/a, club..."
+          style={{width:"100%",boxSizing:"border-box",background:"rgba(255,255,255,0.05)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"8px 12px 8px 32px",fontSize:13,color:"#EAF4FA",outline:"none"}}/>
+      </div>
+      <select value={cat} onChange={e=>setCat(e.target.value)}
+        style={{background:"rgba(255,255,255,0.05)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"8px 12px",fontSize:12,color:"rgba(255,255,255,0.7)",outline:"none"}}>
+        <option>Todas</option>{CATS.map(c=><option key={c}>{c}</option>)}
+      </select>
+    </div>
+
+    {!fil.length&&<div style={{textAlign:"center",padding:"3rem",color:"rgba(255,255,255,0.3)"}}>
+      <I.Users size={36} color="rgba(255,255,255,0.15)"/>
+      <p style={{margin:"10px 0 0",fontSize:13}}>No se encontraron jugadores. Ajustá la búsqueda o agregá uno nuevo.</p>
+    </div>}
+
+    {fil.length>0&&vista==="tarjetas"&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:10}}>
+      {fil.map(p=>{
+        const ga=avgGen(p);
+        const es=EST[p.estado||"watching"];
+        const si=sel.includes(p.id);
+        const sc=scoreColor(ga);
+        const ini=`${p.nombre[0]||""}${p.apellido[0]||""}`;
+        return<button key={p.id} onClick={()=>cm?tog(p.id):onSelect(p)}
+          style={{background:"rgba(255,255,255,0.05)",border:`0.5px solid ${si?"#3FD0E0":"rgba(255,255,255,0.1)"}`,borderRadius:12,padding:14,textAlign:"left",cursor:"pointer",transition:"all .15s",boxShadow:si?"0 0 0 1px #3FD0E066":"none"}}
+          onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.09)"}
+          onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.05)"}>
+          <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:10}}>
+            <div style={{position:"relative"}}>
+              {p.fotoUrl
+                ?<img src={p.fotoUrl} alt={p.nombre} style={{width:48,height:48,borderRadius:12,objectFit:"cover",border:"1.5px solid rgba(255,255,255,0.15)"}}/>
+                :<div style={{width:48,height:48,borderRadius:12,background:"linear-gradient(160deg,#1A8FC1,#0B3D62)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:500,color:"white"}}>{ini}</div>
+              }
+            </div>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
+              {cm?<span style={{color:"#3FD0E0"}}>{si?<I.CkSq size={18}/>:<I.Sq size={18}/>}</span>
+                :<span style={{fontSize:10,fontWeight:500,background:`${es.c}22`,color:es.c,padding:"2px 8px",borderRadius:20,border:`0.5px solid ${es.c}44`}}>{es.e} {es.l}</span>
+              }
+            </div>
+          </div>
+          <p style={{fontSize:14,fontWeight:500,color:"#EAF4FA",margin:"0 0 2px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.nombre} {p.apellido}</p>
+          <p style={{fontSize:11,color:"rgba(255,255,255,0.45)",margin:"0 0 10px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.posicion} · {p.categoria}</p>
+          <div style={{display:"flex",gap:5,marginBottom:10,flexWrap:"wrap"}}>
+            {p.altura&&<span style={{fontSize:10,background:"rgba(255,255,255,0.06)",border:"0.5px solid rgba(255,255,255,0.1)",padding:"2px 7px",borderRadius:4,color:"rgba(255,255,255,0.45)"}}>{p.altura}cm</span>}
+            {p.alcanceAtaque&&<span style={{fontSize:10,background:"rgba(255,255,255,0.06)",border:"0.5px solid rgba(255,255,255,0.1)",padding:"2px 7px",borderRadius:4,color:"rgba(255,255,255,0.45)"}}>⬆{p.alcanceAtaque}cm</span>}
+            {p.club&&<span style={{fontSize:10,background:"rgba(255,255,255,0.06)",border:"0.5px solid rgba(255,255,255,0.1)",padding:"2px 7px",borderRadius:4,color:"rgba(255,255,255,0.45)",overflow:"hidden",textOverflow:"ellipsis",maxWidth:80,whiteSpace:"nowrap"}}>{p.club}</span>}
+          </div>
+          {ga?<div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+              <span style={{fontSize:10,color:"rgba(255,255,255,0.35)"}}>Promedio general</span>
+              <span style={{fontSize:13,fontWeight:500,color:sc}}>{ga}</span>
+            </div>
+            <div style={{height:4,background:"rgba(255,255,255,0.06)",borderRadius:2,overflow:"hidden",marginBottom:6}}>
+              <div style={{width:`${(ga/5)*100}%`,height:"100%",background:sc,borderRadius:2,transition:"width .3s"}}/>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between"}}>
+              {Object.entries(AREAS).map(([k,A])=>{const a=avgArea(p,k);return<span key={k} style={{fontSize:10,color:a?A.color:"rgba(255,255,255,0.2)"}}>{A.label.slice(0,3)} {a??<span style={{opacity:.4}}>—</span>}</span>;})}
+            </div>
+          </div>:<p style={{fontSize:11,color:"rgba(255,255,255,0.25)",margin:0,fontStyle:"italic"}}>Sin evaluaciones aún</p>}
+        </button>;
+      })}
+    </div>}
+
+    {fil.length>0&&vista==="lista"&&<div style={{background:"rgba(255,255,255,0.04)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:12,overflow:"hidden"}}>
+      <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 0.8fr",gap:8,padding:"8px 14px",background:"rgba(255,255,255,0.03)",borderBottom:"0.5px solid rgba(255,255,255,0.08)"}}>
+        {["Jugador/a","Técnico","Físico","Mental","Estado"].map(h=><span key={h} style={{fontSize:10,fontWeight:500,color:"rgba(255,255,255,0.35)",textTransform:"uppercase",letterSpacing:".06em"}}>{h}</span>)}
+      </div>
+      {fil.map(p=>{
+        const es=EST[p.estado||"watching"],si=sel.includes(p.id),ini=`${p.nombre[0]||""}${p.apellido[0]||""}`;
+        return<button key={p.id} onClick={()=>cm?tog(p.id):onSelect(p)}
+          style={{width:"100%",display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 0.8fr",gap:8,alignItems:"center",padding:"10px 14px",borderBottom:"0.5px solid rgba(255,255,255,0.05)",background:si?"rgba(63,208,224,0.08)":"transparent",cursor:"pointer",textAlign:"left"}}
+          onMouseEnter={e=>e.currentTarget.style.background=si?"rgba(63,208,224,0.08)":"rgba(255,255,255,0.04)"}
+          onMouseLeave={e=>e.currentTarget.style.background=si?"rgba(63,208,224,0.08)":"transparent"}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            {cm&&<span style={{color:"#3FD0E0",flexShrink:0}}>{si?<I.CkSq size={16}/>:<I.Sq size={16}/>}</span>}
+            {p.fotoUrl?<img src={p.fotoUrl} style={{width:36,height:36,borderRadius:8,objectFit:"cover",flexShrink:0,border:"0.5px solid rgba(255,255,255,0.1)"}}/>
+              :<div style={{width:36,height:36,borderRadius:8,background:"linear-gradient(160deg,#1A8FC1,#0B3D62)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:500,color:"white",flexShrink:0}}>{ini}</div>}
+            <div style={{minWidth:0}}>
+              <p style={{fontSize:13,fontWeight:500,color:"#EAF4FA",margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.nombre} {p.apellido}</p>
+              <p style={{fontSize:11,color:"rgba(255,255,255,0.35)",margin:0}}>{p.posicion}</p>
+            </div>
+          </div>
+          {Object.entries(AREAS).map(([k,A])=>{const a=avgArea(p,k);return<div key={k} style={{display:"flex",alignItems:"center",gap:6}}>
+            <div style={{flex:1,height:4,background:"rgba(255,255,255,0.06)",borderRadius:2,overflow:"hidden"}}>
+              <div style={{width:a?`${(a/5)*100}%`:"0%",height:"100%",background:A.color,borderRadius:2}}/>
+            </div>
+            <span style={{fontSize:11,fontWeight:500,color:a?A.color:"rgba(255,255,255,0.2)",width:24,textAlign:"right",flexShrink:0}}>{a??<span>—</span>}</span>
+          </div>;})}
+          <span style={{fontSize:10,fontWeight:500,background:`${es.c}22`,color:es.c,padding:"2px 8px",borderRadius:20,border:`0.5px solid ${es.c}44`,whiteSpace:"nowrap"}}>{es.e} {es.l}</span>
+        </button>;
+      })}
+    </div>}
+
+    {cm&&<div style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",background:"#0B2235",border:"0.5px solid rgba(255,255,255,0.15)",borderRadius:16,boxShadow:"0 8px 32px rgba(0,0,0,0.5)",padding:"12px 20px",display:"flex",alignItems:"center",gap:14,zIndex:50}}>
+      <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:0}}>
+        {!sel.length?"Elegí 2 o 3 jugadores/as":`${sel.length} seleccionado${sel.length!==1?"s":""} (máx. 3)`}
+      </p>
+      <div style={{display:"flex",marginLeft:4}}>
+        {sel.map(id=>{const p=players.find(pl=>pl.id===id);return p?<div key={id} style={{marginLeft:-8,border:"2px solid #0B2235",borderRadius:10}}>
+          {p.fotoUrl?<img src={p.fotoUrl} style={{width:32,height:32,borderRadius:8,objectFit:"cover"}}/>
+            :<div style={{width:32,height:32,borderRadius:8,background:ROLES[user.rol]?.color||"#1A8FC1",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:500,color:"white"}}>{p.nombre[0]}{p.apellido[0]}</div>}
+        </div>:null;})}
+      </div>
+      <button disabled={sel.length<2} onClick={()=>onCompare(sel)}
+        style={{padding:"8px 16px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#3FD0E0,#1B5FA8)",color:"white",cursor:"pointer",fontSize:12,fontWeight:500,display:"flex",alignItems:"center",gap:6,opacity:sel.length<2?0.4:1}}>
+        <I.Scale size={14} color="#fff"/> Comparar
+      </button>
+      <button onClick={exit} style={{background:"none",border:"none",cursor:"pointer",color:"rgba(255,255,255,0.4)",fontSize:12}}>Cancelar</button>
+    </div>}
   </div>;
 }
-/* ═══ COMPARACIÓN ═══ */
+
+
 function CompView({players,evals,onBack}){
   const PC=["#0B3D62","#1A8FC1","#E08E1D"];
   const allV=Object.entries(AREAS).flatMap(([k,A])=>A.vars.map(v=>({...v,area:k})));
@@ -761,15 +925,180 @@ function Reports({players,evals,notes,getUser}){
 }
 
 /* ═══ ADMINISTRACIÓN ═══ */
-function AdminP({players,evals,notes}){
-  return<div className="p-8 max-w-4xl">
-    <div className="flex items-center gap-2 mb-1"><I.Shield size={20}color="#B8202E"/><h2 className="text-xl font-bold text-[#0B2B45]">Administración</h2></div>
-    <p className="text-sm text-[#6E8DA3] mb-6">Solo visible para el rol Administrador/a.</p>
-    <div className="grid grid-cols-3 gap-4 mb-6">{[{l:"Jugadores",v:players.length,c:"#0B3D62",Icon:I.Users},{l:"Evaluaciones",v:evals.length,c:"#1A8FC1",Icon:I.List},{l:"Notas",v:notes.length,c:"#E08E1D",Icon:I.Note}].map(s=><div key={s.l}className="bg-white rounded-2xl border border-[#DCEEF7] shadow-sm p-5"><div className="flex items-center justify-between mb-3"><span className="text-xs font-bold text-[#6E8DA3] uppercase tracking-wide">{s.l}</span><span className="w-9 h-9 rounded-xl flex items-center justify-center"style={{background:`${s.c}16`}}><s.Icon size={16}color={s.c}/></span></div><p className="text-3xl font-extrabold"style={{color:s.c}}>{s.v}</p></div>)}</div>
-    <div className="bg-white rounded-xl border border-[#DCEEF7] shadow-sm p-5 mb-5"><p className="font-bold text-[#0B2B45] text-sm mb-3">Jerarquía de accesos</p>{Object.entries(ROLES).map(([k,r])=><div key={k}className="flex items-center justify-between border-b border-[#EAF6FB] py-2.5 last:border-0"><RolBadge rol={k}/><span className="text-xs text-[#4F708A] text-right max-w-[70%]">{k==="admin"&&"Acceso total — alta/baja, edición y eliminación"}{k==="head_coach"&&"Visualiza todas las categorías, edita y evalúa"}{k==="coach"&&"Visualiza y evalúa su categoría, deja notas"}{k==="scout"&&"Carga jugadores y evaluaciones"}</span></div>)}</div>
-    <div className="bg-[#E08E1D]/10 border border-[#E08E1D]/30 rounded-xl p-4 flex gap-3"><I.Alert size={18}color="#E08E1D"/><p className="text-xs text-[#7A5A20] leading-relaxed">Para agregar usuarios al staff: <b>supabase.com → Authentication → Users → Add user</b>, creá email y contraseña, y luego en SQL Editor insertá el perfil con el rol y categoría.</p></div>
+function AdminP({players,evals,notes,staff,onUpdateStaff}){
+  const[tab,setTab]=useState("usuarios");
+  const[editId,setEditId]=useState(null);
+  const[editRol,setEditRol]=useState("");
+  const[editCat,setEditCat]=useState("");
+  const[saving,setSaving]=useState(false);
+  const[ok,setOk]=useState("");
+
+  const startEdit=u=>{setEditId(u.id);setEditRol(u.rol);setEditCat(u.categoria);setOk("");};
+  const cancelEdit=()=>{setEditId(null);setOk("");};
+
+  const saveEdit=async()=>{
+    setSaving(true);
+    const{error}=await sb.from("profiles").update({rol:editRol,categoria:editCat}).eq("id",editId);
+    setSaving(false);
+    if(error){alert("Error al guardar cambios");return;}
+    onUpdateStaff(editId,editRol,editCat);
+    setOk("Cambios guardados correctamente.");
+    setEditId(null);
+  };
+
+  const TABS=[{id:"usuarios",l:"Usuarios del staff"},{id:"stats",l:"Estadísticas"},{id:"roles",l:"Jerarquía de accesos"}];
+
+  return<div style={{padding:"2rem",maxWidth:800}}>
+    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+      <I.Shield size={20} color="#B8202E"/>
+      <h2 style={{fontSize:20,fontWeight:500,color:"rgba(255,255,255,0.9)",margin:0}}>Administración</h2>
+    </div>
+    <p style={{fontSize:13,color:"rgba(255,255,255,0.4)",marginBottom:"1.5rem"}}>Solo visible para el rol Administrador/a.</p>
+
+    <div style={{display:"flex",gap:3,marginBottom:"1.5rem",background:"rgba(255,255,255,0.06)",borderRadius:10,padding:3}}>
+      {TABS.map(t=><button key={t.id} onClick={()=>setTab(t.id)}
+        style={{flex:1,padding:"8px 12px",borderRadius:8,border:"none",fontSize:12,fontWeight:tab===t.id?500:400,cursor:"pointer",background:tab===t.id?"rgba(255,255,255,0.12)":"transparent",color:tab===t.id?"#EAF4FA":"rgba(255,255,255,0.45)"}}>
+        {t.l}
+      </button>)}
+    </div>
+
+    {ok&&<div style={{background:"rgba(52,211,153,0.12)",border:"0.5px solid rgba(52,211,153,0.3)",borderRadius:8,padding:"8px 14px",marginBottom:14,fontSize:12,color:"#34D399"}}>{ok}</div>}
+
+    {tab==="usuarios"&&<div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+        <p style={{fontSize:13,color:"rgba(255,255,255,0.6)",margin:0}}>{staff.length} usuario{staff.length!==1?"s":""} registrados</p>
+        <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",background:"rgba(255,255,255,0.05)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:6,padding:"4px 10px"}}>
+          Para agregar usuarios: Supabase → Auth → Add user
+        </div>
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        {staff.length===0&&<div style={{textAlign:"center",padding:"2rem",color:"rgba(255,255,255,0.3)"}}>
+          <I.Users size={28} color="rgba(255,255,255,0.2)"/>
+          <p style={{margin:"8px 0 0",fontSize:13}}>No hay usuarios todavía.</p>
+        </div>}
+        {staff.map(u=>{
+          const isEdit=editId===u.id;
+          const pCount=players.filter(p=>u.categoria==="Todas"||p.categoria===u.categoria).length;
+          const eCount=evals.filter(e=>e.evaluadorId===u.id).length;
+          return<div key={u.id} style={{background:"rgba(255,255,255,0.05)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:12,padding:14}}>
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
+              <div style={{width:38,height:38,borderRadius:"50%",background:ROLES[u.rol]?.color||"#888",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:500,color:"white",flexShrink:0}}>
+                {u.nombre.split(" ").map(n=>n[0]).slice(0,2).join("")}
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <p style={{fontSize:13,fontWeight:500,color:"#EAF4FA",margin:0}}>{u.nombre}</p>
+                <div style={{display:"flex",gap:6,marginTop:3,flexWrap:"wrap"}}>
+                  <span style={{fontSize:10,background:`${ROLES[u.rol]?.color||"#888"}22`,color:ROLES[u.rol]?.color||"#888",padding:"1px 7px",borderRadius:4,border:`0.5px solid ${ROLES[u.rol]?.color||"#888"}44`}}>{ROLES[u.rol]?.label}</span>
+                  <span style={{fontSize:10,color:"rgba(255,255,255,0.35)"}}>Cat: {u.categoria}</span>
+                  <span style={{fontSize:10,color:"rgba(255,255,255,0.25)"}}>· {eCount} evaluaciones cargadas</span>
+                </div>
+              </div>
+              {!isEdit&&<button onClick={()=>startEdit(u)}
+                style={{background:"rgba(255,255,255,0.08)",border:"0.5px solid rgba(255,255,255,0.15)",borderRadius:8,padding:"6px 12px",fontSize:12,color:"rgba(255,255,255,0.6)",cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
+                <I.Edit size={13} color="rgba(255,255,255,0.6)"/> Editar rol
+              </button>}
+            </div>
+            {isEdit&&<div style={{marginTop:12,paddingTop:12,borderTop:"0.5px solid rgba(255,255,255,0.08)"}}>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
+                <div>
+                  <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",margin:"0 0 4px",fontWeight:500}}>Rol</p>
+                  <select value={editRol} onChange={e=>setEditRol(e.target.value)}
+                    style={{width:"100%",background:"rgba(255,255,255,0.06)",border:"0.5px solid rgba(255,255,255,0.15)",borderRadius:8,padding:"8px 10px",fontSize:12,color:"#EAF4FA",outline:"none"}}>
+                    {Object.entries(ROLES).map(([k,r])=><option key={k} value={k}>{r.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",margin:"0 0 4px",fontWeight:500}}>Categoría asignada</p>
+                  <select value={editCat} onChange={e=>setEditCat(e.target.value)}
+                    style={{width:"100%",background:"rgba(255,255,255,0.06)",border:"0.5px solid rgba(255,255,255,0.15)",borderRadius:8,padding:"8px 10px",fontSize:12,color:"#EAF4FA",outline:"none"}}>
+                    <option value="Todas">Todas</option>
+                    {CATS.map(c=><option key={c}>{c}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+                <button onClick={cancelEdit}
+                  style={{padding:"7px 14px",borderRadius:8,border:"0.5px solid rgba(255,255,255,0.15)",background:"transparent",color:"rgba(255,255,255,0.5)",cursor:"pointer",fontSize:12}}>
+                  Cancelar
+                </button>
+                <button onClick={saveEdit} disabled={saving}
+                  style={{padding:"7px 14px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#3FD0E0,#1B5FA8)",color:"white",cursor:"pointer",fontSize:12,fontWeight:500,display:"flex",alignItems:"center",gap:6}}>
+                  {saving&&<I.Loader size={13} color="#fff"/>} {saving?"Guardando...":"Guardar cambios"}
+                </button>
+              </div>
+            </div>}
+          </div>;
+        })}
+      </div>
+    </div>}
+
+    {tab==="stats"&&<div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>
+        {[{l:"Jugadores en base",v:players.length,c:"#3FD0E0",Icon:I.Users},{l:"Evaluaciones totales",v:evals.length,c:"#1A8FC1",Icon:I.List},{l:"Notas del staff",v:notes.length,c:"#E08E1D",Icon:I.Note}]
+          .map(s=><div key={s.l} style={{background:"rgba(255,255,255,0.05)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:12,padding:14}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+              <span style={{fontSize:11,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",letterSpacing:".06em",fontWeight:500}}>{s.l}</span>
+              <span style={{width:30,height:30,borderRadius:8,background:`${s.c}20`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <s.Icon size={15} color={s.c}/>
+              </span>
+            </div>
+            <p style={{fontSize:28,fontWeight:500,color:s.c,margin:0}}>{s.v}</p>
+          </div>)}
+      </div>
+      <div style={{background:"rgba(255,255,255,0.05)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:12,padding:14}}>
+        <p style={{fontSize:13,fontWeight:500,color:"rgba(255,255,255,0.7)",margin:"0 0 12px"}}>Actividad del staff</p>
+        {staff.map(u=>{
+          const eC=evals.filter(e=>e.evaluadorId===u.id).length;
+          const nC=notes.filter(n=>n.autorId===u.id).length;
+          const total=eC+nC;
+          const maxTotal=Math.max(...staff.map(s=>evals.filter(e=>e.evaluadorId===s.id).length+notes.filter(n=>n.autorId===s.id).length),1);
+          return<div key={u.id} style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+            <div style={{width:28,height:28,borderRadius:"50%",background:ROLES[u.rol]?.color||"#888",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:500,color:"white",flexShrink:0}}>
+              {u.nombre.split(" ").map(n=>n[0]).slice(0,2).join("")}
+            </div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+                <span style={{fontSize:12,color:"rgba(255,255,255,0.7)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.nombre}</span>
+                <span style={{fontSize:11,color:"rgba(255,255,255,0.4)",flexShrink:0,marginLeft:8}}>{eC} eval · {nC} notas</span>
+              </div>
+              <div style={{height:5,background:"rgba(255,255,255,0.06)",borderRadius:3,overflow:"hidden"}}>
+                <div style={{width:`${(total/maxTotal)*100}%`,height:"100%",background:ROLES[u.rol]?.color||"#888",borderRadius:3,transition:"width .3s"}}/>
+              </div>
+            </div>
+          </div>;
+        })}
+      </div>
+    </div>}
+
+    {tab==="roles"&&<div>
+      <div style={{background:"rgba(255,255,255,0.05)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:12,padding:14,marginBottom:12}}>
+        {Object.entries(ROLES).map(([k,r])=><div key={k} style={{display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"0.5px solid rgba(255,255,255,0.06)",padding:"10px 0",gap:12}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <div style={{width:32,height:32,borderRadius:8,background:`${r.color}20`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <span style={{fontSize:11,fontWeight:500,color:r.color}}>N{r.nivel}</span>
+            </div>
+            <span style={{fontSize:13,fontWeight:500,color:r.color}}>{r.label}</span>
+          </div>
+          <span style={{fontSize:12,color:"rgba(255,255,255,0.4)",textAlign:"right",maxWidth:"65%"}}>
+            {k==="admin"&&"Acceso total — gestión de usuarios, eliminación y panel de administración"}
+            {k==="head_coach"&&"Ve todas las categorías, edita perfiles, carga evaluaciones y ve el dashboard"}
+            {k==="coach"&&"Ve y evalúa su categoría asignada, deja notas y ve el dashboard"}
+            {k==="scout"&&"Carga jugadores y evaluaciones, deja notas — sin acceso al dashboard"}
+          </span>
+        </div>)}
+      </div>
+      <div style={{background:"rgba(224,142,29,0.1)",border:"0.5px solid rgba(224,142,29,0.25)",borderRadius:10,padding:"10px 14px",display:"flex",gap:10}}>
+        <I.Alert size={16} color="#E08E1D"/>
+        <p style={{fontSize:12,color:"rgba(224,142,29,0.8)",margin:0,lineHeight:1.5}}>
+          Para cambiar el rol de un usuario, usá la pestaña "Usuarios del staff". Los cambios se aplican de inmediato — la próxima vez que ese usuario recargue la app, tendrá los nuevos permisos.
+        </p>
+      </div>
+    </div>}
   </div>;
 }
+
+
+
 /* ═══ APP PRINCIPAL ═══ */
 function ResetPassword(){
   const[pass,setPass]=useState("");
@@ -903,7 +1232,7 @@ function App(){
     if(view==="dashboard")return<GenDash players={players}evals={evals}user={user}/>;
     if(view==="players")return<PlayersList players={players}evals={evals}user={user}canCreate={canCreate}onSelect={setSelP}onCreate={()=>setCreating(true)}onCompare={ids=>setComparing(players.filter(p=>ids.includes(p.id)))}/>;
     if(view==="reports")return<Reports players={players}evals={evals}notes={notes}getUser={getUser}/>;
-    if(view==="admin")return<AdminP players={players}evals={evals}notes={notes}/>;
+    if(view==="admin")return<AdminP players={players}evals={evals}notes={notes}staff={staff}onUpdateStaff={(id,rol,cat)=>setStaff(s=>s.map(u=>u.id===id?{...u,rol,categoria:cat}:u))}/>;
     return null;
   };
 
