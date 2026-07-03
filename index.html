@@ -54,7 +54,7 @@ const fdt=d=>d?new Date(d).toLocaleString("es-AR",{day:"2-digit",month:"2-digit"
 const pFD=r=>({id:r.id,nombre:r.nombre,apellido:r.apellido,dni:r.dni,fechaNacimiento:r.fecha_nacimiento,lugarNacimiento:r.lugar_nacimiento,nacionalidad:r.nacionalidad,categoria:r.categoria,posicion:r.posicion,altura:r.altura,peso:r.peso,envergadura:r.envergadura,alcanceAtaque:r.alcance_ataque,alcanceBloqueo:r.alcance_bloqueo,manoDominante:r.mano_dominante,club:r.club,entrenadorClub:r.entrenador_club,telefono:r.telefono,email:r.email,localidad:r.localidad,provincia:r.provincia,observacionesGenerales:r.observaciones_generales,estado:r.estado||"watching",fotoUrl:r.foto_url,ingresadoPor:r.ingresado_por,activo:r.activo,fechaIngreso:r.fecha_ingreso});
 const pTD=p=>({nombre:p.nombre,apellido:p.apellido,dni:p.dni,fecha_nacimiento:p.fechaNacimiento||null,lugar_nacimiento:p.lugarNacimiento,nacionalidad:p.nacionalidad||"Argentina",categoria:p.categoria,posicion:p.posicion,altura:p.altura?Number(p.altura):null,peso:p.peso?Number(p.peso):null,envergadura:p.envergadura?Number(p.envergadura):null,alcance_ataque:p.alcanceAtaque?Number(p.alcanceAtaque):null,alcance_bloqueo:p.alcanceBloqueo?Number(p.alcanceBloqueo):null,mano_dominante:p.manoDominante,club:p.club,entrenador_club:p.entrenadorClub,telefono:p.telefono,email:p.email,localidad:p.localidad,provincia:p.provincia,observaciones_generales:p.observacionesGenerales,estado:p.estado||"watching",foto_url:p.fotoUrl||null});
 const eFD=r=>({id:r.id,playerId:r.player_id,area:r.area,valores:r.valores||{},evaluadorId:r.evaluador_id,evaluadorRol:r.evaluador_rol,nota:r.nota,notaGeneral:r.nota_general,adjuntos:r.adjuntos||[],fecha:r.fecha});
-const nFD=r=>({id:r.id,playerId:r.player_id,texto:r.texto,tipo:r.tipo,autorId:r.autor_id,autorRol:r.autor_rol,fecha:r.fecha});
+const nFD=r=>({id:r.id,playerId:r.player_id,texto:r.texto,tipo:r.tipo,autorId:r.autor_id,autorRol:r.autor_rol,fecha:r.fecha,confidencial:r.confidencial||false,adjuntos:r.adjuntos||[]});
 const ntFD=r=>({id:r.id,playerId:r.player_id,playerName:r.player_name,categoria:r.categoria,area:r.area,evaluadorId:r.evaluador_id,evaluadorNombre:r.evaluador_nombre,fecha:r.fecha});
 async function upPhoto(file,pid){const ext=file.name.split(".").pop(),path=`${pid}_${Date.now()}.${ext}`;const{error}=await sb.storage.from("player-photos").upload(path,file,{upsert:true});if(error){console.error(error);return null;}return sb.storage.from("player-photos").getPublicUrl(path).data.publicUrl;}
 async function upAttach(file){const ext=file.name.split(".").pop(),path=`${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;const{error}=await sb.storage.from("evaluation-attachments").upload(path,file);if(error){console.error(error);return null;}return sb.storage.from("evaluation-attachments").getPublicUrl(path).data.publicUrl;}
@@ -108,10 +108,28 @@ function Avatar({player,size="md",showCamera=false,onPhotoChange,uploading=false
   const hf=async e=>{const f=e.target.files?.[0];if(!f||!onPhotoChange)return;if(!f.type.startsWith("image/")){alert("Elegí imagen JPG o PNG");return;}onPhotoChange(f);};
   return<div className={`relative ${dims} shrink-0`}><div className="w-full h-full rounded-2xl flex items-center justify-center font-bold text-white overflow-hidden border-2 border-white shadow-md"style={{background:player.fotoUrl?"none":"linear-gradient(160deg,#1A8FC1 0%,#0B3D62 100%)"}}>{uploading?<I.Loader size={18}color="#fff"/>:player.fotoUrl?<img src={player.fotoUrl}alt="foto"className="w-full h-full object-cover"/>:ini}</div>{showCamera&&<><input id={id}type="file"accept="image/*"className="hidden"onChange={hf}disabled={uploading}/><label htmlFor={id}title="Cambiar foto"className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-[#E08E1D] flex items-center justify-center shadow-md border-2 border-white cursor-pointer hover:opacity-90"><I.Camera size={11}color="#fff"/></label></>}</div>;
 }
-function Slider({value,onChange}){
-  const v=value??0,pct=(v/5)*100,c=SC[v]||"#C3D6E0";
-  return<div><input type="range"min={0}max={5}step={1}value={v}className="rs w-full"style={{background:`linear-gradient(to right,${c} 0%,${c} ${pct}%,#E4F1F8 ${pct}%,#E4F1F8 100%)`,["--tc"]:c}}onChange={e=>{const n=Number(e.target.value);onChange(n===0?undefined:n);}}/><div className="flex justify-between px-0.5 mt-1">{[0,1,2,3,4,5].map(n=><span key={n}className="text-[10px] font-semibold"style={{color:n===v?SC[n]:"#AFD3E6"}}>{n===0?"—":n}</span>)}</div><p className="text-xs font-semibold mt-0.5"style={{color:v===0?"#8FA9BC":c}}>{v===0?"Sin calificar — deslizá para puntuar":`${v} · ${ESC[v-1]?.l}`}</p></div>;
+function StarRating({value,onChange}){
+  const v=value??0;
+  const[hover,setHover]=useState(0);
+  const LABELS=["","Insuficiente","Regular","Por encima norma","Muy bueno","Excepcional"];
+  const active=hover||v;
+  return<div>
+    <div style={{display:"flex",gap:2,alignItems:"center",marginBottom:4}}>
+      {[1,2,3,4,5].map(n=><button key={n} type="button"
+        onClick={()=>onChange(n===v?undefined:n)}
+        onMouseEnter={()=>setHover(n)}
+        onMouseLeave={()=>setHover(0)}
+        style={{background:"none",border:"none",cursor:"pointer",padding:"1px 3px",fontSize:28,lineHeight:1,color:n<=active?"#F6B40E":"rgba(255,255,255,0.18)",transition:"color .08s",textShadow:"none"}}>
+        {n<=active?"★":"☆"}
+      </button>)}
+      {v>0&&<span style={{fontSize:16,fontWeight:500,color:"#F6B40E",marginLeft:6}}>{v}</span>}
+    </div>
+    <p style={{fontSize:11,color:v===0?"rgba(255,255,255,0.3)":"#F6B40E",margin:0,fontWeight:500}}>
+      {v===0?"Sin calificar — clic para puntuar":`${LABELS[v]}`}
+    </p>
+  </div>;
 }
+function Slider({value,onChange}){return<StarRating value={value} onChange={onChange}/>;}
 
 /* ═══ CHARTS ═══ */
 function useChart(ref,cfg){
@@ -170,7 +188,7 @@ function Login(){
   const handleForgot=async()=>{
     if(!email){setErr("Ingresá tu email primero para recuperar la contraseña.");return;}
     setErr("");
-    const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
+    const redirectUrl='https://tomasgalimberti.github.io/Seleccion-Voley';const{error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:redirectUrl});
     if(error){setErr("No se pudo enviar el email. Verificá que el email sea correcto.");}
     else{setForgotOk("Te enviamos un email para restablecer tu contraseña. Revisá tu bandeja de entrada.");}
   };
@@ -417,14 +435,197 @@ function EForm({player,user,onSave,onCancel}){
 
 /* ═══ PANEL NOTAS ═══ */
 function NotasP({player,notes,user,onAdd,getUser,canWrite}){
-  const[text,setText]=useState(""),[tipo,setTipo]=useState("nota"),[open,setOpen]=useState(false);
+  const[text,setText]=useState("");
+  const[tipo,setTipo]=useState("nota");
+  const[confidencial,setConfidencial]=useState(false);
+  const[open,setOpen]=useState(false);
+  const[selected,setSelected]=useState(null);
+  const[uploadingAdj,setUploadingAdj]=useState(false);
+  const[adjuntos,setAdjuntos]=useState([]);
+
+  const ROLE_STYLE={
+    admin:    {bg:"#FFF9E6",border:"#E08E1D44",text:"#63380A",sub:"#A07028",av:"#0B3D62"},
+    head_coach:{bg:"#E8F5FF",border:"#1A8FC144",text:"#042C53",sub:"#185FA5",av:"#1A8FC1"},
+    coach:    {bg:"#EDFAF2",border:"#159C6B44",text:"#04342C",sub:"#0F6E56",av:"#159C6B"},
+    scout:    {bg:"#FFF0F0",border:"#D85A3044",text:"#4A1B0C",sub:"#993C1D",av:"#E08E1D"},
+  };
+
+  const canSee=note=>{
+    if(!note.confidencial)return true;
+    const aN=ROLES[note.autorRol]?.nivel??0;
+    const uN=ROLES[user.rol]?.nivel??0;
+    return uN>=aN||user.id===note.autorId;
+  };
+
+  const handleFiles=async list=>{
+    setUploadingAdj(true);
+    for(const f of Array.from(list)){
+      const isImg=f.type.startsWith("image/");
+      const base={id:Date.now()+Math.random(),nombre:f.name,esImagen:isImg};
+      if(isImg){const url=await upAttach(f);if(url)setAdjuntos(p=>[...p,{...base,url}]);}
+      else setAdjuntos(p=>[...p,base]);
+    }
+    setUploadingAdj(false);
+  };
+
+  const guardar=()=>{
+    if(!text.trim())return;
+    onAdd({playerId:player.id,texto:text,tipo,autorId:user.id,autorRol:user.rol,confidencial,adjuntos});
+    setText("");setTipo("nota");setConfidencial(false);setAdjuntos([]);setOpen(false);
+  };
+
   const list=notes.filter(n=>n.playerId===player.id).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
-  return<div className="space-y-4">
-    {canWrite&&<div className="bg-white rounded-2xl border-2 border-[#C3E0EE] overflow-hidden"><button onClick={()=>setOpen(o=>!o)}className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-[#EAF5FA] transition-colors cursor-pointer"><span className="flex items-center gap-2 text-sm font-bold text-[#0B2B45]"><span className="w-7 h-7 rounded-lg flex items-center justify-center"style={{background:"linear-gradient(135deg,#1FC9C2,#1B5FA8)"}}><I.Note size={14}color="#fff"/></span>Agregar nota o devolución</span>{open?<I.ChevL size={16}color="#1A8FC1"className="rotate-90"/>:<I.Plus size={16}color="#1A8FC1"/>}</button>{open&&<div className="px-4 pb-4 border-t border-[#EAF5FA] pt-3"><select value={tipo}onChange={e=>setTipo(e.target.value)}className="inp w-auto text-xs py-1.5 mb-2"><option value="nota">Nota personal</option><option value="devolucion">Devolución al jugador/a</option></select><textarea value={text}onChange={e=>setText(e.target.value)}className="inp min-h-[70px]"placeholder={tipo==="devolucion"?"Devolución para el jugador/a...":"Anotación personal..."}/><div className="flex justify-end mt-2"><button disabled={!text.trim()}onClick={()=>{onAdd({playerId:player.id,texto:text,tipo,autorId:user.id,autorRol:user.rol});setText("");setOpen(false);}}className="bp"><I.Note size={14}color="#fff"/> Guardar nota</button></div></div>}</div>}
-    {!list.length?<Empty icon={I.Note}title="No hay notas todavía"desc="Las notas quedan registradas con nombre y rol del autor."/>:list.map(n=>{const ac=n.tipo==="devolucion"?"#1A8FC1":"#E08E1D";return<div key={n.id}className="bg-white rounded-xl border border-[#DCEEF7] p-4"style={{borderLeft:`4px solid ${ac}`}}><div className="flex items-center justify-between mb-2"><span className="text-xs font-bold px-2 py-0.5 rounded-md"style={{background:`${ac}1A`,color:ac}}>{n.tipo==="devolucion"?"Devolución al jugador/a":"Nota personal"}</span><span className="text-xs text-[#6E8DA3]">{fdt(n.fecha)}</span></div><p className="text-sm text-[#163B57] mb-2">{n.texto}</p><p className="text-xs text-[#6E8DA3]">Por <b className="text-[#0B2B45]">{getUser(n.autorId)}</b> · <RolBadge rol={n.autorRol}/></p></div>;})}
+  const visible=list.filter(n=>canSee(n));
+  const locked=list.filter(n=>!canSee(n));
+
+  return<div>
+    {canWrite&&<div style={{background:"rgba(255,255,255,0.06)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:12,marginBottom:16,overflow:"hidden"}}>
+      <button onClick={()=>setOpen(o=>!o)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:"none",border:"none",cursor:"pointer",color:"rgba(255,255,255,0.75)"}}>
+        <span style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:500}}>
+          <I.Plus size={16} color="rgba(255,255,255,0.6)"/> Agregar nota o devolución
+        </span>
+        {open?<I.ChevL size={16} color="rgba(255,255,255,0.4)" className="rotate-90"/>:<I.Plus size={16} color="rgba(255,255,255,0.4)"/>}
+      </button>
+      {open&&<div style={{padding:"0 16px 16px",borderTop:"0.5px solid rgba(255,255,255,0.08)"}}>
+        <div style={{display:"flex",gap:8,marginTop:12,marginBottom:8}}>
+          <select value={tipo} onChange={e=>setTipo(e.target.value)}
+            style={{background:"rgba(255,255,255,0.06)",border:"0.5px solid rgba(255,255,255,0.12)",borderRadius:8,padding:"6px 10px",fontSize:12,color:"rgba(255,255,255,0.8)",outline:"none",flex:1}}>
+            <option value="nota">Nota personal</option>
+            <option value="devolucion">Devolución al jugador/a</option>
+          </select>
+          <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",fontSize:12,color:"rgba(255,255,255,0.6)"}}>
+            <input type="checkbox" checked={confidencial} onChange={e=>setConfidencial(e.target.checked)}
+              style={{accentColor:"#E08E1D"}}/>
+            <I.Lock size={13} color={confidencial?"#E08E1D":"rgba(255,255,255,0.4)"}/>
+            Confidencial
+          </label>
+        </div>
+        <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="Escribí tu nota..."
+          style={{width:"100%",boxSizing:"border-box",minHeight:80,background:"rgba(255,255,255,0.05)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#EAF4FA",outline:"none",resize:"vertical"}}/>
+        <div style={{marginTop:8}}>
+          <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,border:"1px dashed rgba(255,255,255,0.15)",borderRadius:8,padding:"8px",cursor:"pointer",fontSize:12,color:"rgba(255,255,255,0.45)"}}>
+            {uploadingAdj?<I.Loader size={14} color="rgba(255,255,255,0.5)"/>:<I.Clip size={14} color="rgba(255,255,255,0.45)"/>}
+            {uploadingAdj?"Subiendo...":"Adjuntar foto o archivo"}
+            <input type="file" multiple accept="image/*,.pdf,.doc,.docx" className="hidden" disabled={uploadingAdj}
+              onChange={e=>{handleFiles(e.target.files);e.target.value="";}}/>
+          </label>
+          {adjuntos.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:6}}>
+            {adjuntos.map(a=><div key={a.id} style={{display:"flex",alignItems:"center",gap:6,background:"rgba(255,255,255,0.08)",borderRadius:6,padding:"4px 8px"}}>
+              {a.esImagen&&a.url?<img src={a.url} style={{width:20,height:20,borderRadius:4,objectFit:"cover"}}/>:<I.Clip size={12} color="rgba(255,255,255,0.5)"/>}
+              <span style={{fontSize:11,color:"rgba(255,255,255,0.6)",maxWidth:100,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.nombre}</span>
+              <button onClick={()=>setAdjuntos(p=>p.filter(x=>x.id!==a.id))} style={{background:"none",border:"none",cursor:"pointer",color:"rgba(255,255,255,0.4)"}}><I.X size={11}/></button>
+            </div>)}
+          </div>}
+        </div>
+        <div style={{display:"flex",justifyContent:"flex-end",marginTop:10}}>
+          <button onClick={guardar} disabled={!text.trim()}
+            style={{background:"linear-gradient(135deg,#3FD0E0,#1B5FA8)",border:"none",borderRadius:8,padding:"8px 16px",color:"white",fontWeight:500,fontSize:13,cursor:"pointer",opacity:text.trim()?1:0.5}}>
+            Guardar nota
+          </button>
+        </div>
+      </div>}
+    </div>}
+
+    {!list.length&&<div style={{textAlign:"center",padding:"2rem",color:"rgba(255,255,255,0.3)"}}>
+      <I.Note size={32} color="rgba(255,255,255,0.2)"/>
+      <p style={{margin:"8px 0 0",fontSize:13}}>No hay notas todavía.</p>
+    </div>}
+
+    {(visible.length>0||locked.length>0)&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:10}}>
+      {visible.map(n=>{
+        const rs=ROLE_STYLE[n.autorRol]||ROLE_STYLE.scout;
+        const ini=getUser(n.autorId).split(" ").map(x=>x[0]).slice(0,2).join("");
+        return<div key={n.id} onClick={()=>setSelected(n)}
+          style={{background:rs.bg,border:`0.5px solid ${rs.border}`,borderRadius:10,padding:14,cursor:"pointer",transition:"transform .15s"}}
+          onMouseEnter={e=>e.currentTarget.style.transform="translateY(-3px)"}
+          onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+            <div style={{width:26,height:26,borderRadius:"50%",background:rs.av,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:500,color:"white",flexShrink:0}}>{ini}</div>
+            <div style={{minWidth:0}}>
+              <p style={{fontSize:11,fontWeight:500,color:rs.text,margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{getUser(n.autorId)}</p>
+              <p style={{fontSize:10,color:rs.sub,margin:0}}>{fdt(n.fecha)}</p>
+            </div>
+            {n.confidencial&&<I.Lock size={12} color={rs.sub} style={{marginLeft:"auto",flexShrink:0}}/>}
+            {n.adjuntos?.length>0&&<I.Clip size={12} color={rs.sub} style={{flexShrink:0}}/>}
+          </div>
+          <p style={{fontSize:12,color:rs.text,margin:"0 0 6px",lineHeight:1.5,display:"-webkit-box",WebkitLineClamp:3,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{n.texto}</p>
+          <span style={{fontSize:10,background:n.confidencial?"#E08E1D22":"rgba(0,0,0,0.06)",color:n.confidencial?rs.sub:rs.sub,padding:"2px 7px",borderRadius:4,border:`0.5px solid ${rs.border}`}}>
+            {n.tipo==="devolucion"?"Devolución":"Nota"}{n.confidencial?" · Confidencial":""}
+          </span>
+        </div>;
+      })}
+
+      {locked.map(n=><div key={n.id} style={{background:"rgba(0,0,0,0.2)",border:"0.5px solid rgba(255,255,255,0.08)",borderRadius:10,padding:14,position:"relative",overflow:"hidden"}}>
+        <div style={{filter:"blur(3px)",pointerEvents:"none"}}>
+          <div style={{height:10,background:"rgba(255,255,255,0.1)",borderRadius:4,marginBottom:8,width:"60%"}}/>
+          <div style={{height:8,background:"rgba(255,255,255,0.08)",borderRadius:4,marginBottom:6,width:"90%"}}/>
+          <div style={{height:8,background:"rgba(255,255,255,0.08)",borderRadius:4,width:"75%"}}/>
+        </div>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,padding:14}}>
+          <I.Lock size={20} color="rgba(255,255,255,0.5)"/>
+          <p style={{fontSize:11,color:"rgba(255,255,255,0.5)",textAlign:"center",margin:0}}>Nota confidencial del {ROLES[n.autorRol]?.label}</p>
+          <button onClick={()=>setSelected({...n,locked:true})}
+            style={{fontSize:11,padding:"5px 12px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.7)",cursor:"pointer"}}>
+            Solicitar acceso
+          </button>
+        </div>
+      </div>)}
+    </div>}
+
+    {selected&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999,padding:"1rem"}}>
+      {selected.locked?<div style={{background:"#0B2235",borderRadius:16,padding:"1.5rem",maxWidth:380,width:"100%",border:"0.5px solid rgba(255,255,255,0.1)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+          <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(224,142,29,0.15)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <I.Lock size={18} color="#E08E1D"/>
+          </div>
+          <div>
+            <p style={{fontSize:14,fontWeight:500,color:"#EAF4FA",margin:0}}>Nota confidencial</p>
+            <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",margin:0}}>Creada por {getUser(selected.autorId)}</p>
+          </div>
+        </div>
+        <p style={{fontSize:13,color:"rgba(255,255,255,0.6)",margin:"0 0 16px",lineHeight:1.6}}>Esta nota fue marcada como confidencial. Tu rol actual no tiene acceso automático. Al solicitar acceso, el autor recibirá una notificación.</p>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={()=>setSelected(null)} style={{flex:1,padding:"9px",borderRadius:8,border:"0.5px solid rgba(255,255,255,0.15)",background:"transparent",color:"rgba(255,255,255,0.5)",cursor:"pointer",fontSize:13}}>Cancelar</button>
+          <button onClick={()=>setSelected(null)} style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#3FD0E0,#1B5FA8)",color:"white",cursor:"pointer",fontSize:13,fontWeight:500}}>Solicitar acceso</button>
+        </div>
+      </div>:<div style={{background:"#0B2235",borderRadius:16,padding:"1.5rem",maxWidth:440,width:"100%",border:"0.5px solid rgba(255,255,255,0.1)"}}>
+        {(()=>{const rs=ROLE_STYLE[selected.autorRol]||ROLE_STYLE.scout;const ini=getUser(selected.autorId).split(" ").map(x=>x[0]).slice(0,2).join("");return<>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{width:36,height:36,borderRadius:"50%",background:rs.av,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:500,color:"white"}}>{ini}</div>
+              <div>
+                <p style={{fontSize:14,fontWeight:500,color:"#EAF4FA",margin:0}}>{getUser(selected.autorId)}</p>
+                <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",margin:0}}>{ROLES[selected.autorRol]?.label} · {fdt(selected.fecha)}</p>
+              </div>
+            </div>
+            <button onClick={()=>setSelected(null)} style={{background:"none",border:"none",cursor:"pointer",color:"rgba(255,255,255,0.4)"}}><I.X size={18}/></button>
+          </div>
+          <div style={{background:"rgba(255,255,255,0.05)",borderRadius:8,padding:"10px 14px",marginBottom:12}}>
+            <span style={{fontSize:11,fontWeight:500,color:rs.sub}}>
+              {selected.tipo==="devolucion"?"Devolución al jugador/a":"Nota personal"}{selected.confidencial?" · Confidencial":""}
+            </span>
+            <p style={{fontSize:13,color:"rgba(255,255,255,0.85)",margin:"6px 0 0",lineHeight:1.7}}>{selected.texto}</p>
+          </div>
+          {selected.adjuntos?.length>0&&<div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:12}}>
+            <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",margin:0}}>Adjuntos</p>
+            {selected.adjuntos.map((a,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.06)",borderRadius:8,padding:"8px 12px"}}>
+              {a.esImagen&&a.url?<img src={a.url} style={{width:28,height:28,borderRadius:4,objectFit:"cover"}}/>:<I.Clip size={16} color="rgba(255,255,255,0.5)"/>}
+              <span style={{fontSize:12,color:"rgba(255,255,255,0.7)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.nombre}</span>
+              {a.url&&<a href={a.url} target="_blank" rel="noreferrer"
+                style={{fontSize:11,padding:"4px 10px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.7)",textDecoration:"none",display:"flex",alignItems:"center",gap:4}}>
+                <I.DL size={12} color="rgba(255,255,255,0.7)"/> Abrir
+              </a>}
+            </div>)}
+          </div>}
+          <button onClick={()=>setSelected(null)} style={{width:"100%",padding:"9px",borderRadius:8,border:"0.5px solid rgba(255,255,255,0.15)",background:"transparent",color:"rgba(255,255,255,0.5)",cursor:"pointer",fontSize:13}}>Cerrar</button>
+        </>})()}
+      </div>}
+    </div>}
   </div>;
 }
-/* ═══ DASHBOARD JUGADOR ═══ */
+
+
+
 function PDash({player,evals}){
   const ev=evals.filter(e=>e.playerId===player.id);
   const avgA=a=>{const rel=ev.filter(e=>e.area===a);if(!rel.length)return null;const vs=AREAS[a].vars.map(v=>v.k);const s={},c={};vs.forEach(k=>{s[k]=0;c[k]=0;});rel.forEach(e=>vs.forEach(k=>{if(e.valores[k]){s[k]+=e.valores[k];c[k]++;}}));return vs.map(k=>({k,l:AREAS[a].vars.find(v=>v.k===k).l,v:c[k]?Math.round(s[k]/c[k]*10)/10:0}));};
@@ -570,12 +771,64 @@ function AdminP({players,evals,notes}){
   </div>;
 }
 /* ═══ APP PRINCIPAL ═══ */
+function ResetPassword(){
+  const[pass,setPass]=useState("");
+  const[pass2,setPass2]=useState("");
+  const[err,setErr]=useState("");
+  const[ok,setOk]=useState(false);
+  const[loading,setL]=useState(false);
+  const inputStyle={width:"100%",boxSizing:"border-box",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.09)",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#EAF4FA",outline:"none"};
+  const handle=async e=>{
+    e.preventDefault();setErr("");
+    if(pass.length<6){setErr("La contraseña debe tener al menos 6 caracteres.");return;}
+    if(pass!==pass2){setErr("Las contraseñas no coinciden.");return;}
+    setL(true);
+    const{error}=await sb.auth.updateUser({password:pass});
+    setL(false);
+    if(error){setErr("No se pudo cambiar la contraseña. Intentá de nuevo.");}
+    else{setOk(true);setTimeout(()=>window.location.hash="",1500);}
+  };
+  if(ok)return<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#D6E8F5"}}>
+    <div style={{background:"#0B2235",borderRadius:18,padding:"2rem",maxWidth:320,width:"100%",textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.35)"}}>
+      <p style={{fontSize:32,margin:"0 0 8px"}}>✅</p>
+      <p style={{color:"#34D399",fontSize:15,fontWeight:500,margin:"0 0 4px"}}>Contraseña cambiada</p>
+      <p style={{color:"rgba(255,255,255,0.4)",fontSize:12,margin:0}}>Redirigiendo al login...</p>
+    </div>
+  </div>;
+  return<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#D6E8F5",padding:"1.5rem"}}>
+    <div style={{width:"100%",maxWidth:320,background:"#0B2235",borderRadius:18,padding:"2rem 1.75rem",boxShadow:"0 20px 60px rgba(0,0,0,0.35)"}}>
+      <div style={{textAlign:"center",marginBottom:"1.5rem"}}>
+        <FevaMark size={44}/>
+        <p style={{fontSize:17,fontWeight:500,color:"#EAF4FA",margin:"10px 0 2px"}}>Nueva contraseña</p>
+        <p style={{fontSize:10,color:"rgba(255,255,255,0.35)",letterSpacing:".1em",textTransform:"uppercase",margin:0}}>FeVA · Observa</p>
+      </div>
+      <form onSubmit={handle}>
+        <div style={{marginBottom:8}}>
+          <span style={{fontSize:11,color:"rgba(255,255,255,0.4)",marginBottom:4,fontWeight:500,display:"block"}}>Nueva contraseña</span>
+          <input type="password" required value={pass} onChange={e=>setPass(e.target.value)} placeholder="Mínimo 6 caracteres" style={inputStyle}/>
+        </div>
+        <div style={{marginBottom:"1.25rem"}}>
+          <span style={{fontSize:11,color:"rgba(255,255,255,0.4)",marginBottom:4,fontWeight:500,display:"block"}}>Repetir contraseña</span>
+          <input type="password" required value={pass2} onChange={e=>setPass2(e.target.value)} placeholder="••••••••" style={inputStyle}/>
+        </div>
+        {err&&<div style={{background:"rgba(217,83,79,0.15)",border:"0.5px solid rgba(217,83,79,0.3)",borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:12,color:"#E07070"}}>{err}</div>}
+        <button type="submit" disabled={loading} style={{width:"100%",background:"linear-gradient(135deg,#3FD0E0,#1B5FA8)",border:"none",borderRadius:8,padding:10,color:"white",fontWeight:500,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+          {loading&&<I.Loader size={15} color="#fff"/>}{loading?"Guardando...":"Guardar contraseña"}
+        </button>
+      </form>
+    </div>
+  </div>;
+}
+
 function App(){
-  const[session,setSession]=useState(undefined),[user,setUser]=useState(null),[staff,setStaff]=useState([]),[players,setPlayers]=useState([]),[evals,setEvals]=useState([]),[notes,setNotes]=useState([]),[notifs,setNotifs]=useState([]),[loading,setLoading]=useState(true),[view,setView]=useState("dashboard"),[selP,setSelP]=useState(null),[creating,setCreating]=useState(false),[comparing,setComparing]=useState(null);
+  const[session,setSession]=useState(undefined),[user,setUser]=useState(null),[staff,setStaff]=useState([]),[players,setPlayers]=useState([]),[evals,setEvals]=useState([]),[notes,setNotes]=useState([]),[notifs,setNotifs]=useState([]),[loading,setLoading]=useState(true),[view,setView]=useState("dashboard"),[selP,setSelP]=useState(null),[creating,setCreating]=useState(false),[comparing,setComparing]=useState(null),[isRecovery,setIsRecovery]=useState(false);
 
   useEffect(()=>{
     sb.auth.getSession().then(({data})=>setSession(data.session));
-    const{data:L}=sb.auth.onAuthStateChange((_,s)=>setSession(s));
+    const{data:L}=sb.auth.onAuthStateChange((event,s)=>{
+      setSession(s);
+      if(event==="PASSWORD_RECOVERY"){setIsRecovery(true);}
+    });
     return()=>L.subscription.unsubscribe();
   },[]);
 
@@ -633,12 +886,13 @@ function App(){
     setSelP(p=>players.find(x=>x.id===p?.id)||p);
   };
   const handleAddNote=async note=>{
-    const{data,error}=await sb.from("notes").insert({player_id:note.playerId,texto:note.texto,tipo:note.tipo,autor_id:user.id,autor_rol:user.rol}).select().single();
+    const{data,error}=await sb.from("notes").insert({player_id:note.playerId,texto:note.texto,tipo:note.tipo,autor_id:user.id,autor_rol:user.rol,confidencial:note.confidencial||false,adjuntos:note.adjuntos||[]}).select().single();
     if(error){alert("Error al guardar nota");return;}
     setNotes(p=>[nFD(data),...p]);
   };
 
   if(session===undefined||loading)return<div className="min-h-screen flex items-center justify-center bg-[#0B3D62] text-white gap-2"><I.Loader size={18}color="#fff"/> Cargando...</div>;
+  if(isRecovery)return<ResetPassword/>;
   if(!session||!user)return<Login/>;
   const canCreate=["admin","head_coach","coach","scout"].includes(user.rol);
 
