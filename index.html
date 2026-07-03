@@ -214,8 +214,8 @@ function Login(){
     setMode("login");reset();
   };
 
-  const inputStyle={width:"100%",boxSizing:"border-box",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.09)",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#EAF4FA",outline:"none"};
-  const selectStyle={width:"100%",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.09)",borderRadius:8,padding:"9px 8px",fontSize:12,color:"#EAF4FA",outline:"none"};
+  const inputStyle={width:"100%",boxSizing:"border-box",background:"rgba(255,255,255,0.05)",border:"1px solid #C3E0EE5,255,255,0.09)",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#EAF4FA",outline:"none"};
+  const selectStyle={width:"100%",background:"rgba(255,255,255,0.05)",border:"1px solid #C3E0EE5,255,255,0.09)",borderRadius:8,padding:"9px 8px",fontSize:12,color:"#EAF4FA",outline:"none"};
   const labelStyle={fontSize:11,color:"rgba(255,255,255,0.4)",margin:"0 0 4px",fontWeight:500,display:"block"};
 
   const CATS2=[
@@ -479,41 +479,41 @@ function NotasP({player,notes,user,onAdd,getUser,canWrite}){
   const locked=list.filter(n=>!canSee(n));
 
   return<div>
-    {canWrite&&<div style={{background:"rgba(255,255,255,0.06)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:12,marginBottom:16,overflow:"hidden"}}>
-      <button onClick={()=>setOpen(o=>!o)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:"none",border:"none",cursor:"pointer",color:"rgba(255,255,255,0.75)"}}>
+    {canWrite&&<div style={{background:"#EAF6FB",border:"0.5px solid #C3E0EE",borderRadius:12,marginBottom:16,overflow:"hidden"}}>
+      <button onClick={()=>setOpen(o=>!o)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:"none",border:"none",cursor:"pointer",color:"#163B57"}}>
         <span style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:500}}>
-          <I.Plus size={16} color="rgba(255,255,255,0.6)"/> Agregar nota o devolución
+          <I.Plus size={16} color="#4F708A"/> Agregar nota o devolución
         </span>
-        {open?<I.ChevL size={16} color="rgba(255,255,255,0.4)" className="rotate-90"/>:<I.Plus size={16} color="rgba(255,255,255,0.4)"/>}
+        {open?<I.ChevL size={16} color="#8FA9BC" className="rotate-90"/>:<I.Plus size={16} color="#8FA9BC"/>}
       </button>
-      {open&&<div style={{padding:"0 16px 16px",borderTop:"0.5px solid rgba(255,255,255,0.08)"}}>
+      {open&&<div style={{padding:"0 16px 16px",borderTop:"0.5px solid #D9ECF6"}}>
         <div style={{display:"flex",gap:8,marginTop:12,marginBottom:8}}>
           <select value={tipo} onChange={e=>setTipo(e.target.value)}
-            style={{background:"rgba(255,255,255,0.06)",border:"0.5px solid rgba(255,255,255,0.12)",borderRadius:8,padding:"6px 10px",fontSize:12,color:"rgba(255,255,255,0.8)",outline:"none",flex:1}}>
+            style={{background:"#EAF6FB",border:"0.5px solid #C3E0EE",borderRadius:8,padding:"6px 10px",fontSize:12,color:"rgba(255,255,255,0.8)",outline:"none",flex:1}}>
             <option value="nota">Nota personal</option>
             <option value="devolucion">Devolución al jugador/a</option>
           </select>
-          <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",fontSize:12,color:"rgba(255,255,255,0.6)"}}>
+          <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",fontSize:12,color:"#4F708A"}}>
             <input type="checkbox" checked={confidencial} onChange={e=>setConfidencial(e.target.checked)}
               style={{accentColor:"#E08E1D"}}/>
-            <I.Lock size={13} color={confidencial?"#E08E1D":"rgba(255,255,255,0.4)"}/>
+            <I.Lock size={13} color={confidencial?"#E08E1D":"#8FA9BC"}/>
             Confidencial
           </label>
         </div>
         <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="Escribí tu nota..."
-          style={{width:"100%",boxSizing:"border-box",minHeight:80,background:"rgba(255,255,255,0.05)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#EAF4FA",outline:"none",resize:"vertical"}}/>
+          style={{width:"100%",boxSizing:"border-box",minHeight:80,background:"#F6FBFD",border:"0.5px solid #C3E0EE",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#0B2B45",outline:"none",resize:"vertical"}}/>
         <div style={{marginTop:8}}>
-          <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,border:"1px dashed rgba(255,255,255,0.15)",borderRadius:8,padding:"8px",cursor:"pointer",fontSize:12,color:"rgba(255,255,255,0.45)"}}>
-            {uploadingAdj?<I.Loader size={14} color="rgba(255,255,255,0.5)"/>:<I.Clip size={14} color="rgba(255,255,255,0.45)"/>}
+          <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,border:"1px dashed #BBCEDD",borderRadius:8,padding:"8px",cursor:"pointer",fontSize:12,color:"#6E8DA3"}}>
+            {uploadingAdj?<I.Loader size={14} color="#6E8DA3"/>:<I.Clip size={14} color="#6E8DA3"/>}
             {uploadingAdj?"Subiendo...":"Adjuntar foto o archivo"}
             <input type="file" multiple accept="image/*,.pdf,.doc,.docx" className="hidden" disabled={uploadingAdj}
               onChange={e=>{handleFiles(e.target.files);e.target.value="";}}/>
           </label>
           {adjuntos.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:6}}>
-            {adjuntos.map(a=><div key={a.id} style={{display:"flex",alignItems:"center",gap:6,background:"rgba(255,255,255,0.08)",borderRadius:6,padding:"4px 8px"}}>
-              {a.esImagen&&a.url?<img src={a.url} style={{width:20,height:20,borderRadius:4,objectFit:"cover"}}/>:<I.Clip size={12} color="rgba(255,255,255,0.5)"/>}
-              <span style={{fontSize:11,color:"rgba(255,255,255,0.6)",maxWidth:100,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.nombre}</span>
-              <button onClick={()=>setAdjuntos(p=>p.filter(x=>x.id!==a.id))} style={{background:"none",border:"none",cursor:"pointer",color:"rgba(255,255,255,0.4)"}}><I.X size={11}/></button>
+            {adjuntos.map(a=><div key={a.id} style={{display:"flex",alignItems:"center",gap:6,background:"#EAF6FB",borderRadius:6,padding:"4px 8px"}}>
+              {a.esImagen&&a.url?<img src={a.url} style={{width:20,height:20,borderRadius:4,objectFit:"cover"}}/>:<I.Clip size={12} color="#6E8DA3"/>}
+              <span style={{fontSize:11,color:"#4F708A",maxWidth:100,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.nombre}</span>
+              <button onClick={()=>setAdjuntos(p=>p.filter(x=>x.id!==a.id))} style={{background:"none",border:"none",cursor:"pointer",color:"#8FA9BC"}}><I.X size={11}/></button>
             </div>)}
           </div>}
         </div>
@@ -526,8 +526,8 @@ function NotasP({player,notes,user,onAdd,getUser,canWrite}){
       </div>}
     </div>}
 
-    {!list.length&&<div style={{textAlign:"center",padding:"2rem",color:"rgba(255,255,255,0.3)"}}>
-      <I.Note size={32} color="rgba(255,255,255,0.2)"/>
+    {!list.length&&<div style={{textAlign:"center",padding:"2rem",color:"#9BB5C8"}}>
+      <I.Note size={32} color="#C3D6E0"/>
       <p style={{margin:"8px 0 0",fontSize:13}}>No hay notas todavía.</p>
     </div>}
 
@@ -549,23 +549,23 @@ function NotasP({player,notes,user,onAdd,getUser,canWrite}){
             {n.adjuntos?.length>0&&<I.Clip size={12} color={rs.sub} style={{flexShrink:0}}/>}
           </div>
           <p style={{fontSize:12,color:rs.text,margin:"0 0 6px",lineHeight:1.5,display:"-webkit-box",WebkitLineClamp:3,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{n.texto}</p>
-          <span style={{fontSize:10,background:n.confidencial?"#E08E1D22":"rgba(0,0,0,0.06)",color:n.confidencial?rs.sub:rs.sub,padding:"2px 7px",borderRadius:4,border:`0.5px solid ${rs.border}`}}>
+          <span style={{fontSize:10,background:n.confidencial?"#E08E1D22":"rgba(11,61,98,0.04)",color:n.confidencial?rs.sub:rs.sub,padding:"2px 7px",borderRadius:4,border:`0.5px solid ${rs.border}`}}>
             {n.tipo==="devolucion"?"Devolución":"Nota"}{n.confidencial?" · Confidencial":""}
           </span>
         </div>;
       })}
 
-      {locked.map(n=><div key={n.id} style={{background:"rgba(0,0,0,0.2)",border:"0.5px solid rgba(255,255,255,0.08)",borderRadius:10,padding:14,position:"relative",overflow:"hidden"}}>
+      {locked.map(n=><div key={n.id} style={{background:"rgba(11,61,98,0.05)",border:"0.5px solid #D9ECF6",borderRadius:10,padding:14,position:"relative",overflow:"hidden"}}>
         <div style={{filter:"blur(3px)",pointerEvents:"none"}}>
-          <div style={{height:10,background:"rgba(255,255,255,0.1)",borderRadius:4,marginBottom:8,width:"60%"}}/>
-          <div style={{height:8,background:"rgba(255,255,255,0.08)",borderRadius:4,marginBottom:6,width:"90%"}}/>
-          <div style={{height:8,background:"rgba(255,255,255,0.08)",borderRadius:4,width:"75%"}}/>
+          <div style={{height:10,background:"#DCEEF7",borderRadius:4,marginBottom:8,width:"60%"}}/>
+          <div style={{height:8,background:"#EAF6FB",borderRadius:4,marginBottom:6,width:"90%"}}/>
+          <div style={{height:8,background:"#EAF6FB",borderRadius:4,width:"75%"}}/>
         </div>
         <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,padding:14}}>
-          <I.Lock size={20} color="rgba(255,255,255,0.5)"/>
-          <p style={{fontSize:11,color:"rgba(255,255,255,0.5)",textAlign:"center",margin:0}}>Nota confidencial del {ROLES[n.autorRol]?.label}</p>
+          <I.Lock size={20} color="#6E8DA3"/>
+          <p style={{fontSize:11,color:"#6E8DA3",textAlign:"center",margin:0}}>Nota confidencial del {ROLES[n.autorRol]?.label}</p>
           <button onClick={()=>setSelected({...n,locked:true})}
-            style={{fontSize:11,padding:"5px 12px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.7)",cursor:"pointer"}}>
+            style={{fontSize:11,padding:"5px 12px",borderRadius:6,border:"0.5px solid #A8C4D6",background:"#EAF6FB",color:"#163B57",cursor:"pointer"}}>
             Solicitar acceso
           </button>
         </div>
@@ -573,51 +573,51 @@ function NotasP({player,notes,user,onAdd,getUser,canWrite}){
     </div>}
 
     {selected&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999,padding:"1rem"}}>
-      {selected.locked?<div style={{background:"#0B2235",borderRadius:16,padding:"1.5rem",maxWidth:380,width:"100%",border:"0.5px solid rgba(255,255,255,0.1)"}}>
+      {selected.locked?<div style={{background:"#0B2235",borderRadius:16,padding:"1.5rem",maxWidth:380,width:"100%",border:"0.5px solid #C3E0EE"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
           <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(224,142,29,0.15)",display:"flex",alignItems:"center",justifyContent:"center"}}>
             <I.Lock size={18} color="#E08E1D"/>
           </div>
           <div>
-            <p style={{fontSize:14,fontWeight:500,color:"#EAF4FA",margin:0}}>Nota confidencial</p>
-            <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",margin:0}}>Creada por {getUser(selected.autorId)}</p>
+            <p style={{fontSize:14,fontWeight:500,color:"#0B2B45",margin:0}}>Nota confidencial</p>
+            <p style={{fontSize:11,color:"#8FA9BC",margin:0}}>Creada por {getUser(selected.autorId)}</p>
           </div>
         </div>
-        <p style={{fontSize:13,color:"rgba(255,255,255,0.6)",margin:"0 0 16px",lineHeight:1.6}}>Esta nota fue marcada como confidencial. Tu rol actual no tiene acceso automático. Al solicitar acceso, el autor recibirá una notificación.</p>
+        <p style={{fontSize:13,color:"#4F708A",margin:"0 0 16px",lineHeight:1.6}}>Esta nota fue marcada como confidencial. Tu rol actual no tiene acceso automático. Al solicitar acceso, el autor recibirá una notificación.</p>
         <div style={{display:"flex",gap:8}}>
-          <button onClick={()=>setSelected(null)} style={{flex:1,padding:"9px",borderRadius:8,border:"0.5px solid rgba(255,255,255,0.15)",background:"transparent",color:"rgba(255,255,255,0.5)",cursor:"pointer",fontSize:13}}>Cancelar</button>
+          <button onClick={()=>setSelected(null)} style={{flex:1,padding:"9px",borderRadius:8,border:"0.5px solid #BBCEDD",background:"transparent",color:"#6E8DA3",cursor:"pointer",fontSize:13}}>Cancelar</button>
           <button onClick={()=>setSelected(null)} style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#3FD0E0,#1B5FA8)",color:"white",cursor:"pointer",fontSize:13,fontWeight:500}}>Solicitar acceso</button>
         </div>
-      </div>:<div style={{background:"#0B2235",borderRadius:16,padding:"1.5rem",maxWidth:440,width:"100%",border:"0.5px solid rgba(255,255,255,0.1)"}}>
+      </div>:<div style={{background:"#0B2235",borderRadius:16,padding:"1.5rem",maxWidth:440,width:"100%",border:"0.5px solid #C3E0EE"}}>
         {(()=>{const rs=ROLE_STYLE[selected.autorRol]||ROLE_STYLE.scout;const ini=getUser(selected.autorId).split(" ").map(x=>x[0]).slice(0,2).join("");return<>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
               <div style={{width:36,height:36,borderRadius:"50%",background:rs.av,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:500,color:"white"}}>{ini}</div>
               <div>
-                <p style={{fontSize:14,fontWeight:500,color:"#EAF4FA",margin:0}}>{getUser(selected.autorId)}</p>
-                <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",margin:0}}>{ROLES[selected.autorRol]?.label} · {fdt(selected.fecha)}</p>
+                <p style={{fontSize:14,fontWeight:500,color:"#0B2B45",margin:0}}>{getUser(selected.autorId)}</p>
+                <p style={{fontSize:11,color:"#8FA9BC",margin:0}}>{ROLES[selected.autorRol]?.label} · {fdt(selected.fecha)}</p>
               </div>
             </div>
-            <button onClick={()=>setSelected(null)} style={{background:"none",border:"none",cursor:"pointer",color:"rgba(255,255,255,0.4)"}}><I.X size={18}/></button>
+            <button onClick={()=>setSelected(null)} style={{background:"none",border:"none",cursor:"pointer",color:"#8FA9BC"}}><I.X size={18}/></button>
           </div>
-          <div style={{background:"rgba(255,255,255,0.05)",borderRadius:8,padding:"10px 14px",marginBottom:12}}>
+          <div style={{background:"#F6FBFD",borderRadius:8,padding:"10px 14px",marginBottom:12}}>
             <span style={{fontSize:11,fontWeight:500,color:rs.sub}}>
               {selected.tipo==="devolucion"?"Devolución al jugador/a":"Nota personal"}{selected.confidencial?" · Confidencial":""}
             </span>
-            <p style={{fontSize:13,color:"rgba(255,255,255,0.85)",margin:"6px 0 0",lineHeight:1.7}}>{selected.texto}</p>
+            <p style={{fontSize:13,color:"#163B57",margin:"6px 0 0",lineHeight:1.7}}>{selected.texto}</p>
           </div>
           {selected.adjuntos?.length>0&&<div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:12}}>
-            <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",margin:0}}>Adjuntos</p>
-            {selected.adjuntos.map((a,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.06)",borderRadius:8,padding:"8px 12px"}}>
-              {a.esImagen&&a.url?<img src={a.url} style={{width:28,height:28,borderRadius:4,objectFit:"cover"}}/>:<I.Clip size={16} color="rgba(255,255,255,0.5)"/>}
-              <span style={{fontSize:12,color:"rgba(255,255,255,0.7)",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.nombre}</span>
+            <p style={{fontSize:11,color:"#8FA9BC",margin:0}}>Adjuntos</p>
+            {selected.adjuntos.map((a,i)=><div key={i} style={{display:"flex",alignItems:"center",gap:8,background:"#EAF6FB",borderRadius:8,padding:"8px 12px"}}>
+              {a.esImagen&&a.url?<img src={a.url} style={{width:28,height:28,borderRadius:4,objectFit:"cover"}}/>:<I.Clip size={16} color="#6E8DA3"/>}
+              <span style={{fontSize:12,color:"#163B57",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.nombre}</span>
               {a.url&&<a href={a.url} target="_blank" rel="noreferrer"
-                style={{fontSize:11,padding:"4px 10px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.7)",textDecoration:"none",display:"flex",alignItems:"center",gap:4}}>
-                <I.DL size={12} color="rgba(255,255,255,0.7)"/> Abrir
+                style={{fontSize:11,padding:"4px 10px",borderRadius:6,border:"0.5px solid #A8C4D6",background:"#EAF6FB",color:"#163B57",textDecoration:"none",display:"flex",alignItems:"center",gap:4}}>
+                <I.DL size={12} color="#163B57"/> Abrir
               </a>}
             </div>)}
           </div>}
-          <button onClick={()=>setSelected(null)} style={{width:"100%",padding:"9px",borderRadius:8,border:"0.5px solid rgba(255,255,255,0.15)",background:"transparent",color:"rgba(255,255,255,0.5)",cursor:"pointer",fontSize:13}}>Cerrar</button>
+          <button onClick={()=>setSelected(null)} style={{width:"100%",padding:"9px",borderRadius:8,border:"0.5px solid #BBCEDD",background:"transparent",color:"#6E8DA3",cursor:"pointer",fontSize:13}}>Cerrar</button>
         </>})()}
       </div>}
     </div>}
@@ -720,24 +720,24 @@ function PlayersList({players,evals,user,onSelect,onCreate,canCreate,onCompare})
   return<div style={{padding:"2rem"}}>
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"1.5rem"}}>
       <div>
-        <h2 style={{fontSize:20,fontWeight:500,color:"rgba(255,255,255,0.9)",margin:0}}>Jugadores observados</h2>
-        <p style={{fontSize:13,color:"rgba(255,255,255,0.4)",margin:"2px 0 0"}}>{fil.length} jugador{fil.length!==1?"es":""} en la base</p>
+        <h2 style={{fontSize:20,fontWeight:500,color:"#0B2B45",margin:0}}>Jugadores observados</h2>
+        <p style={{fontSize:13,color:"#6E8DA3",margin:"2px 0 0"}}>{fil.length} jugador{fil.length!==1?"es":""} en la base</p>
       </div>
       <div style={{display:"flex",alignItems:"center",gap:8}}>
-        <div style={{display:"flex",background:"rgba(255,255,255,0.06)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:8,padding:3}}>
+        <div style={{display:"flex",background:"white",border:"0.5px solid #C3E0EE",borderRadius:8,padding:3}}>
           {[{id:"tarjetas",Icon:I.Grid},{id:"lista",Icon:I.BarC}].map(v=>
             <button key={v.id} onClick={()=>setV(v.id)}
-              style={{padding:"6px 10px",borderRadius:6,border:"none",background:vista===v.id?"rgba(255,255,255,0.15)":"transparent",cursor:"pointer",display:"flex",alignItems:"center"}}>
-              <v.Icon size={14} color={vista===v.id?"#EAF4FA":"rgba(255,255,255,0.35)"}/>
+              style={{padding:"6px 10px",borderRadius:6,border:"none",background:vista===v.id?"#1A8FC1":"transparent",cursor:"pointer",display:"flex",alignItems:"center"}}>
+              <v.Icon size={14} color={vista===v.id?"white":"#6E8DA3"}/>
             </button>
           )}
         </div>
         <button onClick={()=>cm?exit():setCm(true)}
-          style={{padding:"7px 12px",borderRadius:8,border:`0.5px solid ${cm?"#3FD0E0":"rgba(255,255,255,0.15)"}`,background:cm?"rgba(63,208,224,0.15)":"transparent",color:cm?"#3FD0E0":"rgba(255,255,255,0.6)",cursor:"pointer",fontSize:12,fontWeight:500,display:"flex",alignItems:"center",gap:6}}>
-          <I.Scale size={14} color={cm?"#3FD0E0":"rgba(255,255,255,0.6)"}/>{cm?"Cancelar":"Comparar"}
+          style={{padding:"7px 12px",borderRadius:8,border:`1px solid ${cm?"#1A8FC1":"#C3E0EE"}`,background:cm?"#EAF6FB":"white",color:cm?"#0B3D62":"#4F708A",cursor:"pointer",fontSize:12,fontWeight:500,display:"flex",alignItems:"center",gap:6}}>
+          <I.Scale size={14} color={cm?"#1A8FC1":"#4F708A"}/>{cm?"Cancelar":"Comparar"}
         </button>
         {canCreate&&<button onClick={onCreate}
-          style={{padding:"7px 14px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#3FD0E0,#1B5FA8)",color:"white",cursor:"pointer",fontSize:12,fontWeight:500,display:"flex",alignItems:"center",gap:6}}>
+          style={{padding:"7px 14px",borderRadius:8,border:"none",background:"#0B3D62",color:"white",cursor:"pointer",fontSize:12,fontWeight:500,display:"flex",alignItems:"center",gap:6}}>
           <I.Plus size={14} color="#fff"/> Nuevo jugador/a
         </button>}
       </div>
@@ -749,7 +749,7 @@ function PlayersList({players,evals,user,onSelect,onCreate,canCreate,onCompare})
         const cnt=k==="Todos"?players.length:players.filter(p=>(p.estado||"watching")===k).length;
         const act=est===k;
         return<button key={k} onClick={()=>setEst(k)}
-          style={{padding:"5px 12px",borderRadius:20,border:`0.5px solid ${act?(k==="Todos"?"#3FD0E0":`${e.c}88`):"rgba(255,255,255,0.12)"}`,background:act?(k==="Todos"?"rgba(63,208,224,0.15)":`${e.c}22`):"transparent",color:act?(k==="Todos"?"#3FD0E0":e.c):"rgba(255,255,255,0.4)",cursor:"pointer",fontSize:11,fontWeight:act?500:400}}>
+          style={{padding:"5px 12px",borderRadius:20,border:`1px solid ${act?(k==="Todos"?"#1A8FC1":`${e.c}`):"#C3E0EE"}`,background:act?(k==="Todos"?"#1A8FC1":`${e.c}18`):"white",color:act?(k==="Todos"?"white":e.c):"#6E8DA3",cursor:"pointer",fontSize:11,fontWeight:act?500:400}}>
           {k!=="Todos"&&e.e+" "}{k==="Todos"?"Todos":e.l} · {cnt}
         </button>;
       })}
@@ -758,20 +758,20 @@ function PlayersList({players,evals,user,onSelect,onCreate,canCreate,onCompare})
     <div style={{display:"flex",gap:10,marginBottom:16}}>
       <div style={{position:"relative",flex:1,maxWidth:360}}>
         <div style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)"}}>
-          <I.Search size={14} color="rgba(255,255,255,0.35)"/>
+          <I.Search size={14} color="#6E8DA3"/>
         </div>
         <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Buscar jugador/a, club..."
-          style={{width:"100%",boxSizing:"border-box",background:"rgba(255,255,255,0.05)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"8px 12px 8px 32px",fontSize:13,color:"#EAF4FA",outline:"none"}}/>
+          className="inp" style={{paddingLeft:32}}/>
       </div>
-      <select value={cat} onChange={e=>setCat(e.target.value)}
-        style={{background:"rgba(255,255,255,0.05)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"8px 12px",fontSize:12,color:"rgba(255,255,255,0.7)",outline:"none"}}>
+      <select value={cat} onChange={e=>setCat(e.target.value)} className="inp" style={{width:"auto"}}>
         <option>Todas</option>{CATS.map(c=><option key={c}>{c}</option>)}
       </select>
     </div>
 
-    {!fil.length&&<div style={{textAlign:"center",padding:"3rem",color:"rgba(255,255,255,0.3)"}}>
-      <I.Users size={36} color="rgba(255,255,255,0.15)"/>
-      <p style={{margin:"10px 0 0",fontSize:13}}>No se encontraron jugadores. Ajustá la búsqueda o agregá uno nuevo.</p>
+    {!fil.length&&<div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"3rem",color:"#6E8DA3",textAlign:"center"}}>
+      <I.Users size={36} color="#C3E0EE"/>
+      <p style={{margin:"10px 0 4px",fontSize:14,fontWeight:500,color:"#0B2B45"}}>No se encontraron jugadores</p>
+      <p style={{margin:0,fontSize:13,color:"#6E8DA3"}}>Ajustá la búsqueda o agregá un nuevo jugador/a.</p>
     </div>}
 
     {fil.length>0&&vista==="tarjetas"&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:10}}>
@@ -782,90 +782,89 @@ function PlayersList({players,evals,user,onSelect,onCreate,canCreate,onCompare})
         const sc=scoreColor(ga);
         const ini=`${p.nombre[0]||""}${p.apellido[0]||""}`;
         return<button key={p.id} onClick={()=>cm?tog(p.id):onSelect(p)}
-          style={{background:"rgba(255,255,255,0.05)",border:`0.5px solid ${si?"#3FD0E0":"rgba(255,255,255,0.1)"}`,borderRadius:12,padding:14,textAlign:"left",cursor:"pointer",transition:"all .15s",boxShadow:si?"0 0 0 1px #3FD0E066":"none"}}
-          onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.09)"}
-          onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.05)"}>
+          style={{background:"white",border:`1px solid ${si?"#1A8FC1":"#DCEEF7"}`,borderRadius:12,padding:14,textAlign:"left",cursor:"pointer",transition:"all .15s",boxShadow:si?"0 0 0 2px #1A8FC133":"0 1px 3px rgba(11,61,98,0.06)"}}
+          onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 4px 16px rgba(11,61,98,0.12)";e.currentTarget.style.transform="translateY(-1px)";}}
+          onMouseLeave={e=>{e.currentTarget.style.boxShadow=si?"0 0 0 2px #1A8FC133":"0 1px 3px rgba(11,61,98,0.06)";e.currentTarget.style.transform="translateY(0)";}}>
           <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:10}}>
-            <div style={{position:"relative"}}>
-              {p.fotoUrl
-                ?<img src={p.fotoUrl} alt={p.nombre} style={{width:48,height:48,borderRadius:12,objectFit:"cover",border:"1.5px solid rgba(255,255,255,0.15)"}}/>
-                :<div style={{width:48,height:48,borderRadius:12,background:"linear-gradient(160deg,#1A8FC1,#0B3D62)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:500,color:"white"}}>{ini}</div>
-              }
-            </div>
+            {p.fotoUrl
+              ?<img src={p.fotoUrl} alt={p.nombre} style={{width:48,height:48,borderRadius:12,objectFit:"cover",border:"1.5px solid #DCEEF7",flexShrink:0}}/>
+              :<div style={{width:48,height:48,borderRadius:12,background:"linear-gradient(160deg,#1A8FC1,#0B3D62)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:500,color:"white",flexShrink:0}}>{ini}</div>
+            }
             <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
-              {cm?<span style={{color:"#3FD0E0"}}>{si?<I.CkSq size={18}/>:<I.Sq size={18}/>}</span>
-                :<span style={{fontSize:10,fontWeight:500,background:`${es.c}22`,color:es.c,padding:"2px 8px",borderRadius:20,border:`0.5px solid ${es.c}44`}}>{es.e} {es.l}</span>
+              {cm
+                ?<span style={{color:"#1A8FC1"}}>{si?<I.CkSq size={18}/>:<I.Sq size={18}/>}</span>
+                :<span style={{fontSize:10,fontWeight:500,background:`${es.c}18`,color:es.c,padding:"2px 8px",borderRadius:20,border:`1px solid ${es.c}44`}}>{es.e} {es.l}</span>
               }
             </div>
           </div>
-          <p style={{fontSize:14,fontWeight:500,color:"#EAF4FA",margin:"0 0 2px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.nombre} {p.apellido}</p>
-          <p style={{fontSize:11,color:"rgba(255,255,255,0.45)",margin:"0 0 10px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.posicion} · {p.categoria}</p>
-          <div style={{display:"flex",gap:5,marginBottom:10,flexWrap:"wrap"}}>
-            {p.altura&&<span style={{fontSize:10,background:"rgba(255,255,255,0.06)",border:"0.5px solid rgba(255,255,255,0.1)",padding:"2px 7px",borderRadius:4,color:"rgba(255,255,255,0.45)"}}>{p.altura}cm</span>}
-            {p.alcanceAtaque&&<span style={{fontSize:10,background:"rgba(255,255,255,0.06)",border:"0.5px solid rgba(255,255,255,0.1)",padding:"2px 7px",borderRadius:4,color:"rgba(255,255,255,0.45)"}}>⬆{p.alcanceAtaque}cm</span>}
-            {p.club&&<span style={{fontSize:10,background:"rgba(255,255,255,0.06)",border:"0.5px solid rgba(255,255,255,0.1)",padding:"2px 7px",borderRadius:4,color:"rgba(255,255,255,0.45)",overflow:"hidden",textOverflow:"ellipsis",maxWidth:80,whiteSpace:"nowrap"}}>{p.club}</span>}
+          <p style={{fontSize:14,fontWeight:500,color:"#0B2B45",margin:"0 0 2px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.nombre} {p.apellido}</p>
+          <p style={{fontSize:11,color:"#6E8DA3",margin:"0 0 10px"}}>{p.posicion} · {p.categoria}</p>
+          <div style={{display:"flex",gap:4,marginBottom:10,flexWrap:"wrap"}}>
+            {p.altura&&<span style={{fontSize:10,background:"#EAF6FB",border:"0.5px solid #C3E0EE",padding:"2px 7px",borderRadius:4,color:"#4F708A"}}>{p.altura}cm</span>}
+            {p.alcanceAtaque&&<span style={{fontSize:10,background:"#EAF6FB",border:"0.5px solid #C3E0EE",padding:"2px 7px",borderRadius:4,color:"#4F708A"}}>⬆{p.alcanceAtaque}cm</span>}
+            {p.club&&<span style={{fontSize:10,background:"#EAF6FB",border:"0.5px solid #C3E0EE",padding:"2px 7px",borderRadius:4,color:"#4F708A",overflow:"hidden",textOverflow:"ellipsis",maxWidth:90,whiteSpace:"nowrap"}}>{p.club}</span>}
           </div>
           {ga?<div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-              <span style={{fontSize:10,color:"rgba(255,255,255,0.35)"}}>Promedio general</span>
-              <span style={{fontSize:13,fontWeight:500,color:sc}}>{ga}</span>
+              <span style={{fontSize:10,color:"#8FA9BC"}}>Promedio general</span>
+              <span style={{fontSize:14,fontWeight:500,color:sc}}>{ga}</span>
             </div>
-            <div style={{height:4,background:"rgba(255,255,255,0.06)",borderRadius:2,overflow:"hidden",marginBottom:6}}>
-              <div style={{width:`${(ga/5)*100}%`,height:"100%",background:sc,borderRadius:2,transition:"width .3s"}}/>
+            <div style={{height:5,background:"#EAF6FB",borderRadius:3,overflow:"hidden",marginBottom:6}}>
+              <div style={{width:`${(ga/5)*100}%`,height:"100%",background:sc,borderRadius:3}}/>
             </div>
             <div style={{display:"flex",justifyContent:"space-between"}}>
-              {Object.entries(AREAS).map(([k,A])=>{const a=avgArea(p,k);return<span key={k} style={{fontSize:10,color:a?A.color:"rgba(255,255,255,0.2)"}}>{A.label.slice(0,3)} {a??<span style={{opacity:.4}}>—</span>}</span>;})}
+              {Object.entries(AREAS).map(([k,A])=>{const a=avgArea(p,k);return<span key={k} style={{fontSize:10,color:a?A.color:"#C3D6E0",fontWeight:a?500:400}}>{A.label.slice(0,3)} {a??<span>—</span>}</span>;})}
             </div>
-          </div>:<p style={{fontSize:11,color:"rgba(255,255,255,0.25)",margin:0,fontStyle:"italic"}}>Sin evaluaciones aún</p>}
+          </div>:<p style={{fontSize:11,color:"#8FA9BC",margin:0,fontStyle:"italic"}}>Sin evaluaciones aún</p>}
         </button>;
       })}
     </div>}
 
-    {fil.length>0&&vista==="lista"&&<div style={{background:"rgba(255,255,255,0.04)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:12,overflow:"hidden"}}>
-      <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 0.8fr",gap:8,padding:"8px 14px",background:"rgba(255,255,255,0.03)",borderBottom:"0.5px solid rgba(255,255,255,0.08)"}}>
-        {["Jugador/a","Técnico","Físico","Mental","Estado"].map(h=><span key={h} style={{fontSize:10,fontWeight:500,color:"rgba(255,255,255,0.35)",textTransform:"uppercase",letterSpacing:".06em"}}>{h}</span>)}
+    {fil.length>0&&vista==="lista"&&<div style={{background:"white",border:"0.5px solid #DCEEF7",borderRadius:12,overflow:"hidden",boxShadow:"0 1px 3px rgba(11,61,98,0.06)"}}>
+      <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 0.8fr",gap:8,padding:"8px 16px",background:"#EAF6FB",borderBottom:"0.5px solid #C3E0EE"}}>
+        {["Jugador/a","Técnico","Físico","Mental","Estado"].map(h=><span key={h} style={{fontSize:10,fontWeight:500,color:"#4F708A",textTransform:"uppercase",letterSpacing:".06em"}}>{h}</span>)}
       </div>
       {fil.map(p=>{
         const es=EST[p.estado||"watching"],si=sel.includes(p.id),ini=`${p.nombre[0]||""}${p.apellido[0]||""}`;
         return<button key={p.id} onClick={()=>cm?tog(p.id):onSelect(p)}
-          style={{width:"100%",display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 0.8fr",gap:8,alignItems:"center",padding:"10px 14px",borderBottom:"0.5px solid rgba(255,255,255,0.05)",background:si?"rgba(63,208,224,0.08)":"transparent",cursor:"pointer",textAlign:"left"}}
-          onMouseEnter={e=>e.currentTarget.style.background=si?"rgba(63,208,224,0.08)":"rgba(255,255,255,0.04)"}
-          onMouseLeave={e=>e.currentTarget.style.background=si?"rgba(63,208,224,0.08)":"transparent"}>
+          style={{width:"100%",display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 0.8fr",gap:8,alignItems:"center",padding:"10px 16px",borderBottom:"0.5px solid #EAF6FB",background:si?"#EAF6FB":"white",cursor:"pointer",textAlign:"left"}}
+          onMouseEnter={e=>e.currentTarget.style.background="#EAF5FA"}
+          onMouseLeave={e=>e.currentTarget.style.background=si?"#EAF6FB":"white"}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-            {cm&&<span style={{color:"#3FD0E0",flexShrink:0}}>{si?<I.CkSq size={16}/>:<I.Sq size={16}/>}</span>}
-            {p.fotoUrl?<img src={p.fotoUrl} style={{width:36,height:36,borderRadius:8,objectFit:"cover",flexShrink:0,border:"0.5px solid rgba(255,255,255,0.1)"}}/>
+            {cm&&<span style={{color:"#1A8FC1",flexShrink:0}}>{si?<I.CkSq size={16}/>:<I.Sq size={16}/>}</span>}
+            {p.fotoUrl?<img src={p.fotoUrl} style={{width:36,height:36,borderRadius:8,objectFit:"cover",flexShrink:0,border:"0.5px solid #DCEEF7"}}/>
               :<div style={{width:36,height:36,borderRadius:8,background:"linear-gradient(160deg,#1A8FC1,#0B3D62)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:500,color:"white",flexShrink:0}}>{ini}</div>}
             <div style={{minWidth:0}}>
-              <p style={{fontSize:13,fontWeight:500,color:"#EAF4FA",margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.nombre} {p.apellido}</p>
-              <p style={{fontSize:11,color:"rgba(255,255,255,0.35)",margin:0}}>{p.posicion}</p>
+              <p style={{fontSize:13,fontWeight:500,color:"#0B2B45",margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.nombre} {p.apellido}</p>
+              <p style={{fontSize:11,color:"#6E8DA3",margin:0}}>{p.posicion}</p>
             </div>
           </div>
           {Object.entries(AREAS).map(([k,A])=>{const a=avgArea(p,k);return<div key={k} style={{display:"flex",alignItems:"center",gap:6}}>
-            <div style={{flex:1,height:4,background:"rgba(255,255,255,0.06)",borderRadius:2,overflow:"hidden"}}>
+            <div style={{flex:1,height:4,background:"#EAF6FB",borderRadius:2,overflow:"hidden"}}>
               <div style={{width:a?`${(a/5)*100}%`:"0%",height:"100%",background:A.color,borderRadius:2}}/>
             </div>
-            <span style={{fontSize:11,fontWeight:500,color:a?A.color:"rgba(255,255,255,0.2)",width:24,textAlign:"right",flexShrink:0}}>{a??<span>—</span>}</span>
+            <span style={{fontSize:11,fontWeight:500,color:a?A.color:"#C3D6E0",width:24,textAlign:"right",flexShrink:0}}>{a??<span>—</span>}</span>
           </div>;})}
-          <span style={{fontSize:10,fontWeight:500,background:`${es.c}22`,color:es.c,padding:"2px 8px",borderRadius:20,border:`0.5px solid ${es.c}44`,whiteSpace:"nowrap"}}>{es.e} {es.l}</span>
+          <span style={{fontSize:10,fontWeight:500,background:`${es.c}18`,color:es.c,padding:"2px 8px",borderRadius:20,border:`1px solid ${es.c}44`,whiteSpace:"nowrap"}}>{es.e} {es.l}</span>
         </button>;
       })}
     </div>}
 
-    {cm&&<div style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",background:"#0B2235",border:"0.5px solid rgba(255,255,255,0.15)",borderRadius:16,boxShadow:"0 8px 32px rgba(0,0,0,0.5)",padding:"12px 20px",display:"flex",alignItems:"center",gap:14,zIndex:50}}>
-      <p style={{fontSize:13,color:"rgba(255,255,255,0.7)",margin:0}}>
+    {cm&&<div style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",background:"#0B3D62",border:"0.5px solid rgba(255,255,255,0.15)",borderRadius:16,boxShadow:"0 8px 32px rgba(0,0,0,0.3)",padding:"12px 20px",display:"flex",alignItems:"center",gap:14,zIndex:50}}>
+      <p style={{fontSize:13,color:"rgba(255,255,255,0.8)",margin:0}}>
         {!sel.length?"Elegí 2 o 3 jugadores/as":`${sel.length} seleccionado${sel.length!==1?"s":""} (máx. 3)`}
       </p>
       <div style={{display:"flex",marginLeft:4}}>
-        {sel.map(id=>{const p=players.find(pl=>pl.id===id);return p?<div key={id} style={{marginLeft:-8,border:"2px solid #0B2235",borderRadius:10}}>
+        {sel.map(id=>{const p=players.find(pl=>pl.id===id);return p?<div key={id} style={{marginLeft:-8,border:"2px solid #0B3D62",borderRadius:10}}>
           {p.fotoUrl?<img src={p.fotoUrl} style={{width:32,height:32,borderRadius:8,objectFit:"cover"}}/>
-            :<div style={{width:32,height:32,borderRadius:8,background:ROLES[user.rol]?.color||"#1A8FC1",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:500,color:"white"}}>{p.nombre[0]}{p.apellido[0]}</div>}
+            :<div style={{width:32,height:32,borderRadius:8,background:"#1A8FC1",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:500,color:"white"}}>{p.nombre[0]}{p.apellido[0]}</div>}
         </div>:null;})}
       </div>
       <button disabled={sel.length<2} onClick={()=>onCompare(sel)}
         style={{padding:"8px 16px",borderRadius:10,border:"none",background:"linear-gradient(135deg,#3FD0E0,#1B5FA8)",color:"white",cursor:"pointer",fontSize:12,fontWeight:500,display:"flex",alignItems:"center",gap:6,opacity:sel.length<2?0.4:1}}>
         <I.Scale size={14} color="#fff"/> Comparar
       </button>
-      <button onClick={exit} style={{background:"none",border:"none",cursor:"pointer",color:"rgba(255,255,255,0.4)",fontSize:12}}>Cancelar</button>
+      <button onClick={exit} style={{background:"none",border:"none",cursor:"pointer",color:"rgba(255,255,255,0.5)",fontSize:12}}>Cancelar</button>
     </div>}
   </div>;
 }
@@ -951,13 +950,13 @@ function AdminP({players,evals,notes,staff,onUpdateStaff}){
   return<div style={{padding:"2rem",maxWidth:800}}>
     <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
       <I.Shield size={20} color="#B8202E"/>
-      <h2 style={{fontSize:20,fontWeight:500,color:"rgba(255,255,255,0.9)",margin:0}}>Administración</h2>
+      <h2 style={{fontSize:20,fontWeight:500,color:"#0B2B45",margin:0}}>Administración</h2>
     </div>
-    <p style={{fontSize:13,color:"rgba(255,255,255,0.4)",marginBottom:"1.5rem"}}>Solo visible para el rol Administrador/a.</p>
+    <p style={{fontSize:13,color:"#8FA9BC",marginBottom:"1.5rem"}}>Solo visible para el rol Administrador/a.</p>
 
-    <div style={{display:"flex",gap:3,marginBottom:"1.5rem",background:"rgba(255,255,255,0.06)",borderRadius:10,padding:3}}>
+    <div style={{display:"flex",gap:3,marginBottom:"1.5rem",background:"#EAF6FB",borderRadius:10,padding:3}}>
       {TABS.map(t=><button key={t.id} onClick={()=>setTab(t.id)}
-        style={{flex:1,padding:"8px 12px",borderRadius:8,border:"none",fontSize:12,fontWeight:tab===t.id?500:400,cursor:"pointer",background:tab===t.id?"rgba(255,255,255,0.12)":"transparent",color:tab===t.id?"#EAF4FA":"rgba(255,255,255,0.45)"}}>
+        style={{flex:1,padding:"8px 12px",borderRadius:8,border:"none",fontSize:12,fontWeight:tab===t.id?500:400,cursor:"pointer",background:tab===t.id?"#D9ECF6":"transparent",color:tab===t.id?"#0B2B45":"#6E8DA3"}}>
         {t.l}
       </button>)}
     </div>
@@ -966,51 +965,51 @@ function AdminP({players,evals,notes,staff,onUpdateStaff}){
 
     {tab==="usuarios"&&<div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-        <p style={{fontSize:13,color:"rgba(255,255,255,0.6)",margin:0}}>{staff.length} usuario{staff.length!==1?"s":""} registrados</p>
-        <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",background:"rgba(255,255,255,0.05)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:6,padding:"4px 10px"}}>
+        <p style={{fontSize:13,color:"#4F708A",margin:0}}>{staff.length} usuario{staff.length!==1?"s":""} registrados</p>
+        <div style={{fontSize:11,color:"#8FA9BC",background:"#F6FBFD",border:"0.5px solid #C3E0EE",borderRadius:6,padding:"4px 10px"}}>
           Para agregar usuarios: Supabase → Auth → Add user
         </div>
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:8}}>
-        {staff.length===0&&<div style={{textAlign:"center",padding:"2rem",color:"rgba(255,255,255,0.3)"}}>
-          <I.Users size={28} color="rgba(255,255,255,0.2)"/>
+        {staff.length===0&&<div style={{textAlign:"center",padding:"2rem",color:"#9BB5C8"}}>
+          <I.Users size={28} color="#C3D6E0"/>
           <p style={{margin:"8px 0 0",fontSize:13}}>No hay usuarios todavía.</p>
         </div>}
         {staff.map(u=>{
           const isEdit=editId===u.id;
           const pCount=players.filter(p=>u.categoria==="Todas"||p.categoria===u.categoria).length;
           const eCount=evals.filter(e=>e.evaluadorId===u.id).length;
-          return<div key={u.id} style={{background:"rgba(255,255,255,0.05)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:12,padding:14}}>
+          return<div key={u.id} style={{background:"#F6FBFD",border:"0.5px solid #C3E0EE",borderRadius:12,padding:14}}>
             <div style={{display:"flex",alignItems:"center",gap:12}}>
               <div style={{width:38,height:38,borderRadius:"50%",background:ROLES[u.rol]?.color||"#888",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:500,color:"white",flexShrink:0}}>
                 {u.nombre.split(" ").map(n=>n[0]).slice(0,2).join("")}
               </div>
               <div style={{flex:1,minWidth:0}}>
-                <p style={{fontSize:13,fontWeight:500,color:"#EAF4FA",margin:0}}>{u.nombre}</p>
+                <p style={{fontSize:13,fontWeight:500,color:"#0B2B45",margin:0}}>{u.nombre}</p>
                 <div style={{display:"flex",gap:6,marginTop:3,flexWrap:"wrap"}}>
                   <span style={{fontSize:10,background:`${ROLES[u.rol]?.color||"#888"}22`,color:ROLES[u.rol]?.color||"#888",padding:"1px 7px",borderRadius:4,border:`0.5px solid ${ROLES[u.rol]?.color||"#888"}44`}}>{ROLES[u.rol]?.label}</span>
-                  <span style={{fontSize:10,color:"rgba(255,255,255,0.35)"}}>Cat: {u.categoria}</span>
-                  <span style={{fontSize:10,color:"rgba(255,255,255,0.25)"}}>· {eCount} evaluaciones cargadas</span>
+                  <span style={{fontSize:10,color:"#8FA9BC"}}>Cat: {u.categoria}</span>
+                  <span style={{fontSize:10,color:"#9BB5C8"}}>· {eCount} evaluaciones cargadas</span>
                 </div>
               </div>
               {!isEdit&&<button onClick={()=>startEdit(u)}
-                style={{background:"rgba(255,255,255,0.08)",border:"0.5px solid rgba(255,255,255,0.15)",borderRadius:8,padding:"6px 12px",fontSize:12,color:"rgba(255,255,255,0.6)",cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
-                <I.Edit size={13} color="rgba(255,255,255,0.6)"/> Editar rol
+                style={{background:"#EAF6FB",border:"0.5px solid #BBCEDD",borderRadius:8,padding:"6px 12px",fontSize:12,color:"#4F708A",cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
+                <I.Edit size={13} color="#4F708A"/> Editar rol
               </button>}
             </div>
-            {isEdit&&<div style={{marginTop:12,paddingTop:12,borderTop:"0.5px solid rgba(255,255,255,0.08)"}}>
+            {isEdit&&<div style={{marginTop:12,paddingTop:12,borderTop:"0.5px solid #D9ECF6"}}>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
                 <div>
-                  <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",margin:"0 0 4px",fontWeight:500}}>Rol</p>
+                  <p style={{fontSize:11,color:"#8FA9BC",margin:"0 0 4px",fontWeight:500}}>Rol</p>
                   <select value={editRol} onChange={e=>setEditRol(e.target.value)}
-                    style={{width:"100%",background:"rgba(255,255,255,0.06)",border:"0.5px solid rgba(255,255,255,0.15)",borderRadius:8,padding:"8px 10px",fontSize:12,color:"#EAF4FA",outline:"none"}}>
+                    style={{width:"100%",background:"#EAF6FB",border:"0.5px solid #BBCEDD",borderRadius:8,padding:"8px 10px",fontSize:12,color:"#0B2B45",outline:"none"}}>
                     {Object.entries(ROLES).map(([k,r])=><option key={k} value={k}>{r.label}</option>)}
                   </select>
                 </div>
                 <div>
-                  <p style={{fontSize:11,color:"rgba(255,255,255,0.4)",margin:"0 0 4px",fontWeight:500}}>Categoría asignada</p>
+                  <p style={{fontSize:11,color:"#8FA9BC",margin:"0 0 4px",fontWeight:500}}>Categoría asignada</p>
                   <select value={editCat} onChange={e=>setEditCat(e.target.value)}
-                    style={{width:"100%",background:"rgba(255,255,255,0.06)",border:"0.5px solid rgba(255,255,255,0.15)",borderRadius:8,padding:"8px 10px",fontSize:12,color:"#EAF4FA",outline:"none"}}>
+                    style={{width:"100%",background:"#EAF6FB",border:"0.5px solid #BBCEDD",borderRadius:8,padding:"8px 10px",fontSize:12,color:"#0B2B45",outline:"none"}}>
                     <option value="Todas">Todas</option>
                     {CATS.map(c=><option key={c}>{c}</option>)}
                   </select>
@@ -1018,7 +1017,7 @@ function AdminP({players,evals,notes,staff,onUpdateStaff}){
               </div>
               <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
                 <button onClick={cancelEdit}
-                  style={{padding:"7px 14px",borderRadius:8,border:"0.5px solid rgba(255,255,255,0.15)",background:"transparent",color:"rgba(255,255,255,0.5)",cursor:"pointer",fontSize:12}}>
+                  style={{padding:"7px 14px",borderRadius:8,border:"0.5px solid #BBCEDD",background:"transparent",color:"#6E8DA3",cursor:"pointer",fontSize:12}}>
                   Cancelar
                 </button>
                 <button onClick={saveEdit} disabled={saving}
@@ -1035,9 +1034,9 @@ function AdminP({players,evals,notes,staff,onUpdateStaff}){
     {tab==="stats"&&<div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>
         {[{l:"Jugadores en base",v:players.length,c:"#3FD0E0",Icon:I.Users},{l:"Evaluaciones totales",v:evals.length,c:"#1A8FC1",Icon:I.List},{l:"Notas del staff",v:notes.length,c:"#E08E1D",Icon:I.Note}]
-          .map(s=><div key={s.l} style={{background:"rgba(255,255,255,0.05)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:12,padding:14}}>
+          .map(s=><div key={s.l} style={{background:"#F6FBFD",border:"0.5px solid #C3E0EE",borderRadius:12,padding:14}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-              <span style={{fontSize:11,color:"rgba(255,255,255,0.4)",textTransform:"uppercase",letterSpacing:".06em",fontWeight:500}}>{s.l}</span>
+              <span style={{fontSize:11,color:"#8FA9BC",textTransform:"uppercase",letterSpacing:".06em",fontWeight:500}}>{s.l}</span>
               <span style={{width:30,height:30,borderRadius:8,background:`${s.c}20`,display:"flex",alignItems:"center",justifyContent:"center"}}>
                 <s.Icon size={15} color={s.c}/>
               </span>
@@ -1045,8 +1044,8 @@ function AdminP({players,evals,notes,staff,onUpdateStaff}){
             <p style={{fontSize:28,fontWeight:500,color:s.c,margin:0}}>{s.v}</p>
           </div>)}
       </div>
-      <div style={{background:"rgba(255,255,255,0.05)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:12,padding:14}}>
-        <p style={{fontSize:13,fontWeight:500,color:"rgba(255,255,255,0.7)",margin:"0 0 12px"}}>Actividad del staff</p>
+      <div style={{background:"#F6FBFD",border:"0.5px solid #C3E0EE",borderRadius:12,padding:14}}>
+        <p style={{fontSize:13,fontWeight:500,color:"#163B57",margin:"0 0 12px"}}>Actividad del staff</p>
         {staff.map(u=>{
           const eC=evals.filter(e=>e.evaluadorId===u.id).length;
           const nC=notes.filter(n=>n.autorId===u.id).length;
@@ -1058,10 +1057,10 @@ function AdminP({players,evals,notes,staff,onUpdateStaff}){
             </div>
             <div style={{flex:1,minWidth:0}}>
               <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
-                <span style={{fontSize:12,color:"rgba(255,255,255,0.7)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.nombre}</span>
-                <span style={{fontSize:11,color:"rgba(255,255,255,0.4)",flexShrink:0,marginLeft:8}}>{eC} eval · {nC} notas</span>
+                <span style={{fontSize:12,color:"#163B57",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.nombre}</span>
+                <span style={{fontSize:11,color:"#8FA9BC",flexShrink:0,marginLeft:8}}>{eC} eval · {nC} notas</span>
               </div>
-              <div style={{height:5,background:"rgba(255,255,255,0.06)",borderRadius:3,overflow:"hidden"}}>
+              <div style={{height:5,background:"#EAF6FB",borderRadius:3,overflow:"hidden"}}>
                 <div style={{width:`${(total/maxTotal)*100}%`,height:"100%",background:ROLES[u.rol]?.color||"#888",borderRadius:3,transition:"width .3s"}}/>
               </div>
             </div>
@@ -1071,15 +1070,15 @@ function AdminP({players,evals,notes,staff,onUpdateStaff}){
     </div>}
 
     {tab==="roles"&&<div>
-      <div style={{background:"rgba(255,255,255,0.05)",border:"0.5px solid rgba(255,255,255,0.1)",borderRadius:12,padding:14,marginBottom:12}}>
-        {Object.entries(ROLES).map(([k,r])=><div key={k} style={{display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"0.5px solid rgba(255,255,255,0.06)",padding:"10px 0",gap:12}}>
+      <div style={{background:"#F6FBFD",border:"0.5px solid #C3E0EE",borderRadius:12,padding:14,marginBottom:12}}>
+        {Object.entries(ROLES).map(([k,r])=><div key={k} style={{display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"0.5px solid #EAF6FB",padding:"10px 0",gap:12}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <div style={{width:32,height:32,borderRadius:8,background:`${r.color}20`,display:"flex",alignItems:"center",justifyContent:"center"}}>
               <span style={{fontSize:11,fontWeight:500,color:r.color}}>N{r.nivel}</span>
             </div>
             <span style={{fontSize:13,fontWeight:500,color:r.color}}>{r.label}</span>
           </div>
-          <span style={{fontSize:12,color:"rgba(255,255,255,0.4)",textAlign:"right",maxWidth:"65%"}}>
+          <span style={{fontSize:12,color:"#8FA9BC",textAlign:"right",maxWidth:"65%"}}>
             {k==="admin"&&"Acceso total — gestión de usuarios, eliminación y panel de administración"}
             {k==="head_coach"&&"Ve todas las categorías, edita perfiles, carga evaluaciones y ve el dashboard"}
             {k==="coach"&&"Ve y evalúa su categoría asignada, deja notas y ve el dashboard"}
@@ -1106,7 +1105,7 @@ function ResetPassword(){
   const[err,setErr]=useState("");
   const[ok,setOk]=useState(false);
   const[loading,setL]=useState(false);
-  const inputStyle={width:"100%",boxSizing:"border-box",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.09)",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#EAF4FA",outline:"none"};
+  const inputStyle={width:"100%",boxSizing:"border-box",background:"#F6FBFD",border:"1px solid #C3E0EE5,255,255,0.09)",borderRadius:8,padding:"9px 12px",fontSize:13,color:"#0B2B45",outline:"none"};
   const handle=async e=>{
     e.preventDefault();setErr("");
     if(pass.length<6){setErr("La contraseña debe tener al menos 6 caracteres.");return;}
@@ -1121,23 +1120,23 @@ function ResetPassword(){
     <div style={{background:"#0B2235",borderRadius:18,padding:"2rem",maxWidth:320,width:"100%",textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.35)"}}>
       <p style={{fontSize:32,margin:"0 0 8px"}}>✅</p>
       <p style={{color:"#34D399",fontSize:15,fontWeight:500,margin:"0 0 4px"}}>Contraseña cambiada</p>
-      <p style={{color:"rgba(255,255,255,0.4)",fontSize:12,margin:0}}>Redirigiendo al login...</p>
+      <p style={{color:"#8FA9BC",fontSize:12,margin:0}}>Redirigiendo al login...</p>
     </div>
   </div>;
   return<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#D6E8F5",padding:"1.5rem"}}>
     <div style={{width:"100%",maxWidth:320,background:"#0B2235",borderRadius:18,padding:"2rem 1.75rem",boxShadow:"0 20px 60px rgba(0,0,0,0.35)"}}>
       <div style={{textAlign:"center",marginBottom:"1.5rem"}}>
         <FevaMark size={44}/>
-        <p style={{fontSize:17,fontWeight:500,color:"#EAF4FA",margin:"10px 0 2px"}}>Nueva contraseña</p>
-        <p style={{fontSize:10,color:"rgba(255,255,255,0.35)",letterSpacing:".1em",textTransform:"uppercase",margin:0}}>FeVA · Observa</p>
+        <p style={{fontSize:17,fontWeight:500,color:"#0B2B45",margin:"10px 0 2px"}}>Nueva contraseña</p>
+        <p style={{fontSize:10,color:"#8FA9BC",letterSpacing:".1em",textTransform:"uppercase",margin:0}}>FeVA · Observa</p>
       </div>
       <form onSubmit={handle}>
         <div style={{marginBottom:8}}>
-          <span style={{fontSize:11,color:"rgba(255,255,255,0.4)",marginBottom:4,fontWeight:500,display:"block"}}>Nueva contraseña</span>
+          <span style={{fontSize:11,color:"#8FA9BC",marginBottom:4,fontWeight:500,display:"block"}}>Nueva contraseña</span>
           <input type="password" required value={pass} onChange={e=>setPass(e.target.value)} placeholder="Mínimo 6 caracteres" style={inputStyle}/>
         </div>
         <div style={{marginBottom:"1.25rem"}}>
-          <span style={{fontSize:11,color:"rgba(255,255,255,0.4)",marginBottom:4,fontWeight:500,display:"block"}}>Repetir contraseña</span>
+          <span style={{fontSize:11,color:"#8FA9BC",marginBottom:4,fontWeight:500,display:"block"}}>Repetir contraseña</span>
           <input type="password" required value={pass2} onChange={e=>setPass2(e.target.value)} placeholder="••••••••" style={inputStyle}/>
         </div>
         {err&&<div style={{background:"rgba(217,83,79,0.15)",border:"0.5px solid rgba(217,83,79,0.3)",borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:12,color:"#E07070"}}>{err}</div>}
